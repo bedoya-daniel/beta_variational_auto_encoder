@@ -53,7 +53,7 @@ class VAE(nn.Module):
 
     def sample(self, hiddenVec):
         """ sample(hiddenVec):
-            Decodes data from the latent space """
+            Decodes data from the z space """
         return self.decoder(hiddenVec)
 
 

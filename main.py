@@ -4,7 +4,7 @@ Derived from Pytorch tutorial at
 https://github.com/yunjey/pytorch-tutorial
 """
 
-# Librairies
+#%% Librairies
 import torch
 import torch.nn.functional as F
 from torch.autograd import Variable
@@ -14,7 +14,7 @@ import torchvision
 
 import modVAE
 
-# MNIST dataset
+#%% MNIST dataset
 DATASET = datasets.MNIST(root='./data',
                          train=True,
                          transform=transforms.ToTensor(),
@@ -34,7 +34,7 @@ def to_var(tensor):
     return Variable(tensor)
 
 
-
+#%%
 """ TRAINING THE VAE MODEL """
 # Create VAE model
 betaVAE = modVAE.VAE()
@@ -42,7 +42,7 @@ betaVAE = modVAE.VAE()
 # BETA: Regularisation factor
 # 0: Maximum Likelihood
 # 1: Bayes solution
-BETA = 4
+BETA = 10
 
 # GPU computing if available
 if torch.cuda.is_available():
@@ -53,7 +53,7 @@ if torch.cuda.is_available():
 OPTIMIZER = torch.optim.Adam(betaVAE.parameters(), lr=0.001)
 
 ITER_PER_EPOCH = len(DATA_LOADER)
-NB_EPOCH = 50;
+NB_EPOCH = 2;
 DATA_ITER = iter(DATA_LOADER)
 
 # fixed inputs for debugging
@@ -63,7 +63,7 @@ torchvision.utils.save_image(FIXED_X.cpu(), './data/real_images.png')
 FIXED_X = to_var(FIXED_X.view(FIXED_X.size(0), -1))
 
 
-
+    #%%
 """ TRAINING """
 for epoch in range(NB_EPOCH):
     for i, (images, _) in enumerate(DATA_LOADER):
@@ -102,9 +102,14 @@ for epoch in range(NB_EPOCH):
     reconst_images = reconst_images.view(reconst_images.size(0), 1, 28, 28)
     torchvision.utils.save_image(reconst_images.data.cpu(),
                                  './data/reconst_images_%d.png' %(epoch+1))
+#%% SAMPLING 
+# Creating a z vector to decode from
+FIXED_Z = to_var(torch.randn(100, 20))
 
-# Sampling 
-sampled_images, _, _ = betaVAE(FIXED_Z)
+# Sampling from model
+sampled_images = betaVAE.sample(FIXED_Z)
+
+# Saving
 sampled_images = sampled_images.view(sampled_images.size(0), 1, 28, 28)
 torchvision.utils.save_image(sampled_images.data.cpu(),
                              './data/sampled_images.png')
