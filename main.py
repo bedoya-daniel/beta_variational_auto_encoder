@@ -12,7 +12,8 @@ from torchvision import datasets
 from torchvision import transforms
 import torchvision
 
-import modVAE
+from framework import modVAE
+from framework.utils import to_var
 
 #%% MNIST dataset
 DATASET = datasets.MNIST(root='./data',
@@ -24,15 +25,6 @@ DATASET = datasets.MNIST(root='./data',
 DATA_LOADER = torch.utils.data.DataLoader(dataset=DATASET,
                                           batch_size=100,
                                           shuffle=True)
-
-def to_var(tensor):
-    """ to_var(tensor):
-            Converts data into a torch tensor, and puts it on the GPU if
-            available"""
-    if torch.cuda.is_available():
-        tensor = tensor.cuda()
-    return Variable(tensor)
-
 
 #%%
 """ TRAINING THE VAE MODEL """
