@@ -5,14 +5,7 @@ Implementation of a VAE model """
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-
-def to_var(tensor):
-    """ to_var(tensor):
-            Converts data into a torch tensor, and puts it on the GPU if
-            available"""
-    if torch.cuda.is_available():
-        tensor = tensor.cuda()
-    return Variable(tensor)
+from framework.utils import to_var
 
 # VAE model
 class VAE(nn.Module):
