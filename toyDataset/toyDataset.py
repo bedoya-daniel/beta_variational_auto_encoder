@@ -77,7 +77,8 @@ class toyDataset:
 
         DEV:
             - for loop over batchSize
-            - calls get_rand_parameters
+            - calls get_rand_parameters in the genetaeParameterSpace module,
+              which is a method of the object paramterSpace
 
         unit test: it sends back an array of the good size with no 'None' value
         """
