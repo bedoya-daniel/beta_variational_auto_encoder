@@ -1,3 +1,4 @@
+#-*-encoding:UTF-8-*-
 """ __init__.py
 Module: toyDataset
 

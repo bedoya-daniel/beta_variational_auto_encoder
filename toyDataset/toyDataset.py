@@ -1,3 +1,4 @@
+#-*-encoding:UTF-8-*-
 """ Toy Dataset class:
     Create a dataset depending on arguments """
 
@@ -7,10 +8,11 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 import Librosa as lib
+import generateParameterSpace as gps
 
 # Classe du toyDataset
 class toyDataset:
-    def __init__(args):
+    def __init__(self, args):
         """ args: dictionnaire contenant les paramètres du toyDataset 
                 ex: {"pente spectrale",[0.01 0.02 0.03 ... 0.9]} """
 
