@@ -15,7 +15,7 @@ class parameterSpace:
                        'PS' : [-0.01, -0.01, -0.1],
                        'PH' : [0, 1 ,2],
                        'inh': [0, 0.1, 5],
-                       'AB' : [0, 0.05, 1]}
+                       'SnR' : [0, 0.05, 1]}
 
         self.parameter_space = dict.fromkeys(self.params)
 
@@ -58,7 +58,7 @@ class parameterSpace:
         # Init
         output_params = dict.fromkeys(self.parameter_space)
 
-        # Generating parameters
+        # Generating parameters
         for key, value in self.parameter_space.iteritems():
             number_value = len(value)
             rand_index = rand(0, number_value)

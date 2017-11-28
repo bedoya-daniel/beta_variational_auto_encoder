@@ -26,8 +26,9 @@ class toyDataset:
                                 'PS': 1, # pente spectrale
                                 'AB': 0.3} # amplitude du bruit
 
-    def get_minibatch(self, batchSize=100):
-        """ Outputs a dataset for the bVAE
+    def get_minibatch(self, batchSize=100, render=True):
+        """ Outputs a dataset for the bVAE. If render = True, recalculate a new 
+        minibatch. If False, just return the old one (self.toyDataset)
 
         DEV:
             - calls get_rand_params(N): N size of the dataset
