@@ -7,7 +7,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-import torch.utils.data.Dataset as Dataset
+from torch.utils.data import Dataset
 import librosa as lib
 import generateParameterSpace as gps
 import audioEngine as aud
