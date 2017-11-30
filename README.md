@@ -1,7 +1,7 @@
 # Beta VAE
 Implementation derived from PyTorch Tutorials
 
-### Subject
+### Subject
 Applying beta-VAE to audio, on samples
 
 ### Team
