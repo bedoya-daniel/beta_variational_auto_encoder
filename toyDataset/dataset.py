@@ -7,12 +7,13 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
+from torch.utils.data import Dataset
 import librosa as lib
 import generateParameterSpace as gps
 import audioEngine as aud
 
 # Classe du toyDataset
-class toyDataset:
+class toyDataset(Dataset):
     def __init__(self, Fe_Hz=16000, length_sample=64000, batchSize=100):
         """ ToyDataset object.
         INPUT:
@@ -63,6 +64,33 @@ class toyDataset:
 
         # returns the spectrograms
         return self.spectrograms
+
+    def __getitem__(self, index):
+        """ Returns a sample which is a dict with key "images" and "parameters"
+
+        INPUT:
+            - index: index corresponing to a sample in the dataset
+
+        OUTPUT:
+            - sample: dict {'image':spectrogram, 'parameters':[parameters]}
+
+        UNIT TEST:
+            - Vérifier que la fonction retourne bien un dico avec un numpy array 
+            pour la première clé et un ndarray de taille [1xparam]
+        """
+
+        sample = {}
+        sample['spectro'] = self.spectrograms[index]
+        sample['parameters'] = self.batch_parameters[index]
+
+        return sample
+
+    def __len__(self):
+        """ Returns the length of the label vector
+        OUTPUT:
+            - len: length of the parameter vector
+        """
+        return len(self.defSampleParams)
 
     def render_batch(self):
         """ Render the given batch of samples from the input arguments. 
