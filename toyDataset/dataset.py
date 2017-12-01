@@ -79,11 +79,11 @@ class toyDataset(Dataset):
             pour la première clé et un ndarray de taille [1xparam]
         """
 
-        sample = {}
-        sample['spectro'] = self.spectrograms[index]
-        sample['parameters'] = self.batch_parameters[index]
+        # sample = {}
+        # sample['spectro'] = self.spectrograms[index]
+        # sample['parameters'] = self.batch_parameters[index]
 
-        return sample
+        return torch.Tensor(self.spectrograms[index]), self.batch_parameters[index]
 
     def __len__(self):
         """ Returns the length of the label vector
@@ -126,7 +126,7 @@ class toyDataset(Dataset):
 
         unit test: it sends back an array of the good size with no 'None' value
         """
-        # INIT
+        # INIT
         batch_parameters = [{} for i in xrange(self.batch_size)]
 
         # FOR LOOP: generates the batch of random parameters
