@@ -8,27 +8,57 @@ https://github.com/yunjey/pytorch-tutorial
 import torch
 import torch.nn.functional as F
 from torch.autograd import Variable
+
+import torchvision
 from torchvision import datasets
 from torchvision import transforms
-import torchvision
 
 from framework import modVAE
 from framework.utils import to_var
 
+from toyDataset import dataset as dts
+
 #%% MNIST dataset
 DATASET = datasets.MNIST(root='./data',
-                         train=True,
-                         transform=transforms.ToTensor(),
-                         download=True)
+                          train=True,
+                          transform=transforms.ToTensor(),
+                          download=True)
 
 # Data loader
 DATA_LOADER = torch.utils.data.DataLoader(dataset=DATASET,
-                                          batch_size=100,
-                                          shuffle=True)
+                                           batch_size=100,
+                                           shuffle=True)
+
+#%% Toy Dataset loading
+# Parameters
+# n_fft = 1024
+
+# Creating dataset
+# DATASET = dts.toyDataset()
+# dataset = DATASET.get_minibatch()
+#DATA_LOADER = torch.utils.data.DataLoader(dataset=DATASET,
+#                                         batch_size = 100,
+#                                         shuffle=False)
+
 
 #%%
 """ TRAINING THE VAE MODEL """
-# Create VAE model
+
+# fixed inputs for debugging
+FIXED_Z = to_var(torch.randn(100, 20))
+# Saving an item from the dataset to debug
+FIXED_X, _ = DATASET.__getitem__(9)
+FIXED_X = torch.Tensor(FIXED_X).contiguous() # As a contiguous memory block
+
+# Retrieving Height and width
+#HEIGHT,WIDTH = FIXED_X.size()
+
+torchvision.utils.save_image(FIXED_X, 
+                             './data/real_images.png', 
+                             normalize=False)
+
+
+#%% CREATING THE Beta-VAE
 betaVAE = modVAE.VAE()
 
 # BETA: Regularisation factor
@@ -46,21 +76,14 @@ OPTIMIZER = torch.optim.Adam(betaVAE.parameters(), lr=0.001)
 
 ITER_PER_EPOCH = len(DATA_LOADER)
 NB_EPOCH = 2;
-DATA_ITER = iter(DATA_LOADER)
 
-# fixed inputs for debugging
-FIXED_Z = to_var(torch.randn(100, 20))
-FIXED_X, _ = next(DATA_ITER)
-torchvision.utils.save_image(FIXED_X.cpu(), './data/real_images.png')
-FIXED_X = to_var(FIXED_X.view(FIXED_X.size(0), -1))
-
-
-    #%%
+#%%
 """ TRAINING """
 for epoch in range(NB_EPOCH):
-    for i, (images, _) in enumerate(DATA_LOADER):
+    for i,(images,param) in enumerate(DATASET):
+        
 
-        images = to_var(images.view(images.size(0), -1))
+        images = to_var(torch.Tensor(images)).view(images.size(0), -1)
         out, mu, log_var = betaVAE(images)
 
         # Compute reconstruction loss and KL-divergence

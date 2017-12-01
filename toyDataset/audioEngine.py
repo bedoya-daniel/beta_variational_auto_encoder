@@ -21,16 +21,16 @@ class audioEngine:
         return np.random.rand((sound_length))
 
 
-    def spectrogram(self, data):
+    def spectrogram(self, data, n_fft=1024):
         """ an n-array of sounds into spectrograms """
         # M: number of sounds
         # N: number of samples
         (M,N) = np.shape(data)
-        Nfft = 2048
-        spectrograms = [lib.stft(data[1], n_fft=Nfft)*0 for i in xrange(M)]
+
+        spectrograms = [lib.stft(data[1], n_fft=n_fft)*0 for i in xrange(M)]
 
         # FOR LOOP: computing spectrogram
         for i in xrange(M):
-            spectrograms[i] = lib.stft(data[i], n_fft=Nfft)
+            spectrograms[i] = np.abs(lib.stft(data[i], n_fft=n_fft))
 
         return spectrograms
