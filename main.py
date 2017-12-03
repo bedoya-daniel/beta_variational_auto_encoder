@@ -1,3 +1,4 @@
+#-*-encoding:UTF-8-*-
 """
 Beta Variational Auto-Encoder
 Derived from Pytorch tutorial at
@@ -19,12 +20,14 @@ from toyDataset import dataset as dts
 import matplotlib.pyplot as plt
 from numpy.random import randint
 
+import wave
+
 #%% PARAMETERS
 # Parameters, dataset
-N_FFT = 2048
+N_FFT = 1024
 N_EXAMPLES = 100
 #LEN_EXAMPLES = 38400
-LEN_EXAMPLES = 64000
+LEN_EXAMPLES = 6400
 # Net parameters
 Z_DIM, H_DIM = 5, 100
 
@@ -68,7 +71,7 @@ if torch.cuda.is_available():
 OPTIMIZER = torch.optim.Adam(betaVAE.parameters(), lr=0.001)
 
 ITER_PER_EPOCH = N_EXAMPLES
-NB_EPOCH = 25;
+NB_EPOCH = 1;
 
 
 #%%
@@ -119,10 +122,17 @@ for epoch in range(NB_EPOCH):
 FIXED_Z = torch.randn(H_DIM, Z_DIM)
 FIXED_Z = to_var(torch.Tensor(FIXED_Z.contiguous()))
 
-# Sampling from model
-sampled_images = betaVAE.sample(FIXED_Z)
+# Sampling from model, reconstructing from spectrogram
+sampled_image = betaVAE.sample(FIXED_Z)
+sampled_image_numpy = sampled_image.data.numpy()
+reconst_sound = DATASET.audio_engine.griffinlim(sampled_image_numpy)
+#%%
+sound_file = wave.open('data/SOUND/reconstructed_sound.wav','w')
+sound_file.setparams((2, 2, 44100, 0, 'NONE', 'not compressed'))
+sound_file.writeframes(reconst_sound)
+sound_file.close()
 
 # Saving
 #sampled_images = sampled_images.view(sampled_images.size(0), 1, 28, 28)
-torchvision.utils.save_image(sampled_images.data.cpu(),
+torchvision.utils.save_image(sampled_image.data.cpu(),
                              './data/SOUND/sampled_image.png')
