@@ -17,43 +17,35 @@ from framework import modVAE
 from framework.utils import to_var
 
 from toyDataset import dataset as dts
-import matplotlib.pyplot as plt
-from numpy.random import randint
 
 
 #%% Importing DATASET
-# Toy Dataset loading
-# Parameters
-N_FFT = 199
-N_EXAMPLES = 100
-LEN_EXAMPLES = 38400
 
-# Creating dataset
-DATASET = dts.toyDataset(batchSize=N_EXAMPLES,length_sample=LEN_EXAMPLES, n_fft=N_FFT)
-_ = DATASET.get_minibatch()
-# dataset = DATASET.get_minibatch()
+# MNIST dataset
+DATASET = datasets.MNIST(root='./data',
+                          train=True,
+                          transform=transforms.ToTensor(),
+                          download=True)    
+# Data loader
 DATA_LOADER = torch.utils.data.DataLoader(dataset=DATASET,
-                                            batch_size = N_EXAMPLES,
-                                            shuffle=False)
+                                           batch_size=100,
+                                           shuffle=True)
 
 #%%
 """ TRAINING THE VAE MODEL """
 
-FIXED_INDEX = randint(N_EXAMPLES)
+ITER_PER_EPOCH = len(DATA_LOADER)
+DATA_ITER = iter(DATA_LOADER)
 
-# Saving an item from the dataset to debug
-FIXED_X, FIXED_X_PARAMS = DATASET.__getitem__(FIXED_INDEX)
-FIXED_X = to_var(torch.Tensor(FIXED_X.contiguous())).view(images.size(0), -1)
-HEIGHT,WIDTH = FIXED_X.size()
+# fixed inputs for debugging
+FIXED_X, _ = next(DATA_ITER)
+torchvision.utils.save_image(FIXED_X.cpu(), './data/MNIST/real_images.png')
+FIXED_X = to_var(FIXED_X.view(FIXED_X.size(0), -1))
 
-# SAVING fixed x as an image
-torchvision.utils.save_image(DATASET.__getitem__(FIXED_INDEX)[0].contiguous(), 
-                            './data/SOUND/real_images.png',
-                            normalize=False)
+DATA_ITER = enumerate(DATA_LOADER)    
 
 #%% CREATING THE Beta-VAE
-Z_DIM, H_DIM = 5, 400
-betaVAE = modVAE.VAE(z_dim=Z_DIM, h_dim=H_DIM)
+betaVAE = modVAE.VAE(z_dim=5)
 
 # BETA: Regularisation factor
 # 0: Maximum Likelihood
@@ -71,17 +63,14 @@ OPTIMIZER = torch.optim.Adam(betaVAE.parameters(), lr=0.001)
 ITER_PER_EPOCH = len(DATA_LOADER)
 NB_EPOCH = 5;
 
-
 #%%
 """ TRAINING """
-for epoch in range(NB_EPOCH):    
+for epoch in range(NB_EPOCH):
     # Epoch
-    CURRENT_ITERATION = 0;
-    for images,params in DATASET:
-        ++CURRENT_ITERATION
+    for i,(images,params) in DATA_ITER:
         
         # Formatting
-        images = to_var(torch.Tensor(images.contiguous())).view(images.size(0), -1)
+        images = to_var(torch.Tensor(images)).view(images.size(0), -1)
         out, mu, log_var = betaVAE(images)
 
         # Compute reconstruction loss and KL-divergence
@@ -98,12 +87,12 @@ for epoch in range(NB_EPOCH):
 
         # PRINT
         # Prints stats at each epoch
-        if CURRENT_ITERATION % 100 == 0:
+        if i % 100 == 0:
             print ("Epoch[%d/%d], Step [%d/%d], Total Loss: %.4f, "
                    "Reconst Loss: %.4f, KL Div: %.7f"
                    %(epoch+1,
                      NB_EPOCH,
-                     CURRENT_ITERATION,
+                     i+1,
                      ITER_PER_EPOCH,
                      total_loss.data[0],
                      reconst_loss.data[0],
@@ -112,18 +101,17 @@ for epoch in range(NB_EPOCH):
 
     # Save the reconstructed images
     reconst_images, _, _ = betaVAE(FIXED_X)
-    #reconst_images = reconst_images.view(reconst_images.size(0), 1, 28, 28)
+    reconst_images = reconst_images.view(reconst_images.size(0), 1, 28, 28)
     torchvision.utils.save_image(reconst_images.data.cpu(),
-                                 './data/SOUND/reconst_images_%d.png' %(epoch+1))
+                                 './data/MNIST/reconst_images_%d.png' %(epoch+1))
 #%% SAMPLING 
-# Random input
-FIXED_Z = torch.randn(H_DIM, Z_DIM)
-FIXED_Z = to_var(torch.Tensor(FIXED_Z.contiguous()))
+# Creating a z vector to decode from
+FIXED_Z = to_var(torch.randn(100, 20))
 
 # Sampling from model
 sampled_images = betaVAE.sample(FIXED_Z)
 
 # Saving
-#sampled_images = sampled_images.view(sampled_images.size(0), 1, 28, 28)
+sampled_images = sampled_images.view(sampled_images.size(0), 1, 28, 28)
 torchvision.utils.save_image(sampled_images.data.cpu(),
-                             './data/SOUND/sampled_image.png')
+                             './data/MNIST/sampled_image.png')

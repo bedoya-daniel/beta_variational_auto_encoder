@@ -14,7 +14,7 @@ import audioEngine as aud
 
 # Classe du toyDataset
 class toyDataset(Dataset):
-    def __init__(self, Fe_Hz=16000, length_sample=64000, batchSize=100):
+    def __init__(self, Fe_Hz=16000, length_sample=64000, batchSize=100, n_fft=1024):
         """ ToyDataset object.
         INPUT:
             -(opt) Fs: samplerate (def: 16kHz)
@@ -23,6 +23,7 @@ class toyDataset(Dataset):
         self.Fs = Fe_Hz
         self.batch_size = batchSize
         self.length_sample = length_sample
+        self.n_fft = n_fft
 
         # init data structures
         self.batch_parameters = {}
@@ -41,7 +42,7 @@ class toyDataset(Dataset):
         self.paramSpace.generate_parameter_space()
 
         # Create the audio engine for audio rendering
-        self.audio_engine = aud.audioEngine(Fs_Hz=self.Fs)
+        self.audio_engine = aud.audioEngine(Fs_Hz=self.Fs,n_fft=self.n_fft)
 
     def get_minibatch(self, batchSize=100, render=True):
         """ Outputs a dataset for the bVAE. If render = True, recalculate a new 
@@ -135,9 +136,3 @@ class toyDataset(Dataset):
 
         # Returns the data
         return batch_parameters
-
-
-    def to_pytorch_dataset(self, audioBatch):
-        """ Convert the given batch of dataset into a pytorch dataset to input
-        in the Net"""
-
