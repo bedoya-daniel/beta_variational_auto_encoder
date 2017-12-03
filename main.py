@@ -3,7 +3,6 @@ Beta Variational Auto-Encoder
 Derived from Pytorch tutorial at
 https://github.com/yunjey/pytorch-tutorial
 """
-
 #%% Librairies
 import torch
 import torch.nn.functional as F
@@ -20,14 +19,16 @@ from toyDataset import dataset as dts
 import matplotlib.pyplot as plt
 from numpy.random import randint
 
+#%% PARAMETERS
+# Parameters, dataset
+N_FFT = 2048
+N_EXAMPLES = 100
+#LEN_EXAMPLES = 38400
+LEN_EXAMPLES = 64000
+# Net parameters
+Z_DIM, H_DIM = 5, 100
 
 #%% Importing DATASET
-# Toy Dataset loading
-# Parameters
-N_FFT = 199
-N_EXAMPLES = 100
-LEN_EXAMPLES = 38400
-
 # Creating dataset
 DATASET = dts.toyDataset(batchSize=N_EXAMPLES,length_sample=LEN_EXAMPLES, n_fft=N_FFT)
 _ = DATASET.get_minibatch()
@@ -36,14 +37,12 @@ DATA_LOADER = torch.utils.data.DataLoader(dataset=DATASET,
                                             batch_size = N_EXAMPLES,
                                             shuffle=False)
 
-#%%
-""" TRAINING THE VAE MODEL """
-
+#%% Saving original image
 FIXED_INDEX = randint(N_EXAMPLES)
 
 # Saving an item from the dataset to debug
 FIXED_X, FIXED_X_PARAMS = DATASET.__getitem__(FIXED_INDEX)
-FIXED_X = to_var(torch.Tensor(FIXED_X.contiguous())).view(images.size(0), -1)
+FIXED_X = to_var(torch.Tensor(FIXED_X.contiguous())).view(FIXED_X.size(0), -1)
 HEIGHT,WIDTH = FIXED_X.size()
 
 # SAVING fixed x as an image
@@ -52,8 +51,8 @@ torchvision.utils.save_image(DATASET.__getitem__(FIXED_INDEX)[0].contiguous(),
                             normalize=False)
 
 #%% CREATING THE Beta-VAE
-Z_DIM, H_DIM = 5, 400
-betaVAE = modVAE.VAE(z_dim=Z_DIM, h_dim=H_DIM)
+
+betaVAE = modVAE.VAE(image_size= WIDTH,z_dim=Z_DIM, h_dim=H_DIM)
 
 # BETA: Regularisation factor
 # 0: Maximum Likelihood
@@ -68,8 +67,8 @@ if torch.cuda.is_available():
 # OPTIMIZER
 OPTIMIZER = torch.optim.Adam(betaVAE.parameters(), lr=0.001)
 
-ITER_PER_EPOCH = len(DATA_LOADER)
-NB_EPOCH = 5;
+ITER_PER_EPOCH = N_EXAMPLES
+NB_EPOCH = 25;
 
 
 #%%
@@ -78,7 +77,7 @@ for epoch in range(NB_EPOCH):
     # Epoch
     CURRENT_ITERATION = 0;
     for images,params in DATASET:
-        ++CURRENT_ITERATION
+        CURRENT_ITERATION = CURRENT_ITERATION + 1
         
         # Formatting
         images = to_var(torch.Tensor(images.contiguous())).view(images.size(0), -1)
