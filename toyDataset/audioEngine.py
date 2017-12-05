@@ -20,7 +20,51 @@ class audioEngine:
             - Numpy array of size (N x 1) containing the sample
         """
 
-        return np.random.rand((sound_length))
+         # Retrieve parameters
+        f0 = params['f0']
+        slope = params['PS']
+        harmonicPresence = params['PH']
+        inharmonicity = params['inh']
+        SNR = params['SnR']
+        
+        # Sampling parameters
+        Fs = self.Fs # Sampling rate
+        Ts = 1.0/Fs
+        length = 1.0 # length of the signal (in seconds)
+        N = int(Fs*length) # number of samples
+        t = np.arange(0, length, Ts) # time vector
+        
+        # Additive synthesis
+        n_modes = 10 # nombre de modes
+        if harmonic == 0: # tous les modes
+            modes = np.arange(1, n_modes+1)
+        elif harmonic == 1: # que les harmoniques impaires
+            modes = np.arange(1, n_modes+1, 2)
+            n_modes = n_modes/2
+        
+        
+        freq = modes * f0 * np.sqrt(1 + beta * pow(modes, 2))
+        amp = (modes-1)*slope + n_modes
+        amp = (amp/float(n_modes)).clip(min=0)
+        x = np.zeros(N) # signal
+        
+        for k in range(n_modes-1):
+            print freq[k], amp[k] 
+            x = x + amp[k]*np.sin(2*np.pi*freq[k]*t)
+        
+        
+        # Noise
+        noise = (np.random.rand(N) - 0.5) * 2
+        energy_x = np.sum(pow(np.abs(x), 2))
+        energy_noise = np.sum(pow(np.abs(noise), 2))
+        a = np.sqrt(energy_x/(energy_noise*SNR))
+        noise = a*noise
+        
+        # Final signal
+        y = x + noise
+        y = y/max(y)
+        
+        return y
 
 
     def spectrogram(self, data):
