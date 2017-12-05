@@ -27,7 +27,7 @@ import librosa
 N_FFT = 1024
 N_EXAMPLES = 100
 #LEN_EXAMPLES = 38400
-LEN_EXAMPLES = 64000
+LEN_EXAMPLES = 128000
 # Net parameters
 Z_DIM, H_DIM = 5, 100
 
@@ -72,7 +72,7 @@ if torch.cuda.is_available():
 OPTIMIZER = torch.optim.Adam(betaVAE.parameters(), lr=0.001)
 
 ITER_PER_EPOCH = N_EXAMPLES
-NB_EPOCH = 1;
+NB_EPOCH = 15;
 
 
 #%%
@@ -136,9 +136,9 @@ plt.subplot(1,2,2)
 plt.imshow(FIXED_X.data.numpy())
 plt.title('Original image')
 #%%
-reconst_sound = DATASET.audio_engine.griffinlim(sampled_image_numpy)
+reconst_sound = DATASET.audio_engine.griffinlim(sampled_image_numpy, N_iter=250)
 output_name = 'sampled_sound.wav'
-librosa.output.write_wav('sampled_sound.wav',reconst_sound,DATASET.Fs)
+librosa.output.write_wav('data/SOUND/sampled_sound.wav',reconst_sound,DATASET.Fs)
 
 # Saving spectrogram image
 torchvision.utils.save_image(sampled_image.data.cpu(),
