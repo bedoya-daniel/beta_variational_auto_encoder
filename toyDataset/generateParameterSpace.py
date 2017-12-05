@@ -11,6 +11,7 @@ from numpy.random import randint as rand
 class parameterSpace:
     def __init__(self):
         # Initialisation
+        # paramters: start, inc, stop
         self.params = {'f0' : [100, 50, 1000],
                        'PS' : [-0.01, -0.01, -0.1],
                        'PH' : [0, 1 ,2],

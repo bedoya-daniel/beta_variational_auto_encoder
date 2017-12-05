@@ -19,14 +19,15 @@ from framework.utils import to_var
 from toyDataset import dataset as dts
 import matplotlib.pyplot as plt
 from numpy.random import randint
+import numpy as np
 
 import librosa
 #%% PARAMETERS
 # Parameters, dataset
 N_FFT = 1024
-N_EXAMPLES = 10
+N_EXAMPLES = 100
 #LEN_EXAMPLES = 38400
-LEN_EXAMPLES = 1280000
+LEN_EXAMPLES = 64000
 # Net parameters
 Z_DIM, H_DIM = 5, 100
 
@@ -119,13 +120,22 @@ for epoch in range(NB_EPOCH):
                                  './data/SOUND/reconst_images_%d.png' %(epoch+1))
 #%% SAMPLING FROM LATENT SPACE
 # Random input
-FIXED_Z = torch.randn(H_DIM, Z_DIM)
+FIXED_Z = torch.randn(HEIGHT, Z_DIM)
 FIXED_Z = to_var(torch.Tensor(FIXED_Z.contiguous()))
 
 # Sampling from model, reconstructing from spectrogram
 sampled_image = betaVAE.sample(FIXED_Z)
-
 sampled_image_numpy = sampled_image.data.numpy()
+
+#%%
+plt.figure
+plt.subplot(1,2,1)
+plt.imshow(sampled_image_numpy)
+plt.title('Sampled image from latent space')
+plt.subplot(1,2,2)
+plt.imshow(FIXED_X.data.numpy())
+plt.title('Original image')
+#%%
 reconst_sound = DATASET.audio_engine.griffinlim(sampled_image_numpy)
 output_name = 'sampled_sound.wav'
 librosa.output.write_wav('sampled_sound.wav',reconst_sound,DATASET.Fs)
