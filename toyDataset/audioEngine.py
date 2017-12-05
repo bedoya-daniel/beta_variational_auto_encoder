@@ -24,13 +24,13 @@ class audioEngine:
 
 
     def spectrogram(self, data):
-        """ Returns the spectrograms of the array of sounds 'data'
+        """ Returns the absolute value of the stft of the array of sounds 'data'
         
         INPUT:
             data: array of n sounds (n*SOUND_LENGTH)
             
         OUTPUT:
-            output: array of spectrograms
+            output: absolute value of the stft of every sound in the sound array
         
         """
         # M: number of sounds
@@ -50,12 +50,13 @@ class audioEngine:
         # et le nombre de pts de la NFFT désirée.
         # Elle retourne un vecteur correspondant à l'audio reconstruit
     
-    def griffinlim(self, S):
+    def griffinlim(self, S, N_iter=100):
         """ Returns a sound, reconstructed from a spectrogram with NFFT points.
         Griffin and lim algorithm
         
         INPUT:
-            - S: spectrogram (array)
+            - S: spectrogram (array) (absolute value of the stft)
+            - N_iter (def: 100): number of iteration for the reconstruction
         
         OUTPUT:
             - x: signal """
@@ -64,16 +65,15 @@ class audioEngine:
         n_fft = S.shape[0]
         S = np.log1p(np.abs(S))
 
-        #a = np.zeros_like(S)
         a = np.exp(S) - 1
         
         # Phase reconstruction
         p = 2 * np.pi * np.random.random_sample(a.shape) - np.pi
         
         # LOOP: iterative reconstruction
-        for i in range(100):
+        for i in range(N_iter):
             S = a * np.exp(1j*p)
             x = lib.istft(S)
             p = np.angle(lib.stft(x, self.n_fft))
     
-        return x
+        return np.real(x)
