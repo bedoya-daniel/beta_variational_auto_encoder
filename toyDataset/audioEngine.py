@@ -36,23 +36,24 @@ class audioEngine:
         
         # Additive synthesis
         n_modes = 10 # nombre de modes
-        if harmonic == 0: # tous les modes
+        if harmonicPresence == 0: # tous les modes
             modes = np.arange(1, n_modes+1)
-        elif harmonic == 1: # que les harmoniques impaires
+        elif harmonicPresence == 1: # que les harmoniques impaires
             modes = np.arange(1, n_modes+1, 2)
             n_modes = n_modes/2
+        elif harmonicPresence == 2: # que des harmoniques paires
+            modes = np.arange(2, n_modes+1, 2)
+            modes = np.concatenate((np.array([1]), modes))
+            n_modes = n_modes/2 + 1        
         
-        
-        freq = modes * f0 * np.sqrt(1 + beta * pow(modes, 2))
+        freq = modes * f0 * np.sqrt(1 + inharmonicity * pow(modes, 2))
         amp = (modes-1)*slope + n_modes
         amp = (amp/float(n_modes)).clip(min=0)
         x = np.zeros(N) # signal
         
         for k in range(n_modes-1):
-            print freq[k], amp[k] 
             x = x + amp[k]*np.sin(2*np.pi*freq[k]*t)
-        
-        
+                
         # Noise
         noise = (np.random.rand(N) - 0.5) * 2
         energy_x = np.sum(pow(np.abs(x), 2))
