@@ -11,7 +11,7 @@ from framework.utils import to_var
 class VAE(nn.Module):
     """ Variational audo-encoder class """
 
-    def __init__(self, image_size=784, h_dim=400, z_dim=20):
+    def __init__(self, image_size=784, h_dim=400, z_dim=5):
         super(VAE, self).__init__()
 
         # ENCODER
@@ -38,10 +38,11 @@ class VAE(nn.Module):
     def forward(self, data):
         """ forward(x):
             Do the forward pass in the VAE model """
-        h = self.encoder(data)
-        mu, log_var = torch.chunk(h, 2, dim=1)  # mean and log variance.
+        encoded_vec = self.encoder(data)
+        mu, log_var = torch.chunk(encoded_vec, 2, dim=1)  # mean and log variance.
         reparam = self.reparametrize(mu, log_var)
         output = self.decoder(reparam)
+        
         return output, mu, log_var
 
     def sample(self, hiddenVec):

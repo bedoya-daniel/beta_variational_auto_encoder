@@ -14,7 +14,7 @@ import audioEngine as aud
 
 # Classe du toyDataset
 class toyDataset(Dataset):
-    def __init__(self, Fe_Hz=16000, length_sample=64000, batchSize=100, n_fft=1024):
+    def __init__(self, Fe_Hz=8000, length_sample=64000, batchSize=100, n_fft=1024):
         """ ToyDataset object.
         INPUT:
             -(opt) Fs: samplerate (def: 16kHz)
@@ -30,19 +30,32 @@ class toyDataset(Dataset):
         self.sound_data = [];
         self.spectrograms = [];
 
-        self.defSampleParams = {'f0': 300, # fréquence fondamentale
-                                'inh':0.3, # facteur d'inharmonicité
-                                'PH': 0,   # présence des harmoniques
-                                'SnR': 1, # pente spectrale
-                                'AB': 0.3} # amplitude du bruit
-
-        
         # Create parameterSpace
         self.paramSpace = gps.parameterSpace()
         self.paramSpace.generate_parameter_space()
 
         # Create the audio engine for audio rendering
         self.audio_engine = aud.audioEngine(Fs_Hz=self.Fs,n_fft=self.n_fft)
+        
+        self.render_dataset()
+        
+    def render_dataset(self):
+        """ Render the whole parameter space from the parameter space field 
+        
+        OUTPUT:
+            all the sounds of the parameter space
+        """
+
+        # Allocating memory
+        self.sound_data = np.zeros((self.paramSpace.N_samples, self.length_sample))
+        
+        for i in xrange(self.paramSpace.N_samples):
+            params = self.paramSpace.param_dataset_dict[i]
+            self.sound_data[i] = \
+            self.audio_engine.render_sound(params, self.length_sample)
+            
+        self.spectrograms = self.audio_engine.spectrogram(self.sound_data)
+        
 
     def get_minibatch(self, batchSize=100, render=True):
         """ Outputs a dataset for the bVAE. If render = True, recalculate a new 
@@ -79,19 +92,17 @@ class toyDataset(Dataset):
             - Vérifier que la fonction retourne bien un dico avec un numpy array 
             pour la première clé et un ndarray de taille [1xparam]
         """
-
-        # sample = {}
-        # sample['spectro'] = self.spectrograms[index]
-        # sample['parameters'] = self.batch_parameters[index]
-
-        return torch.Tensor(self.spectrograms[index]), self.batch_parameters[index]
+        param = self.paramSpace.permutations_array[index]
+        image = self.spectrograms[index].reshape(1,-1)
+        image = image/np.max(np.abs(image))
+        return image,param
 
     def __len__(self):
         """ Returns the length of the label vector
         OUTPUT:
             - len: length of the parameter vector
         """
-        return len(self.defSampleParams)
+        return len(self.sound_data)
 
     def render_batch(self):
         """ Render the given batch of samples from the input arguments. 
