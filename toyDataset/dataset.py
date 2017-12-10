@@ -14,14 +14,22 @@ import audioEngine as aud
 
 # Classe du toyDataset
 class toyDataset(Dataset):
-    def __init__(self, Fe_Hz=8000, length_sample=64000, batchSize=100, n_fft=1024):
-        """ ToyDataset object.
+    def __init__(self, Fe_Hz=8000, length_sample=64000, batch_size=100, n_fft=1024):
+        """ ToyDataset object. When initialized, synthesized the dataset with
+        the specifications defined in the parameter_space objet 
+
         INPUT:
             -(opt) Fs: samplerate (def: 16kHz)
+            -(opt) length_sample: number of sample per sound example (def:64000)
+            -(opt) batch_size: OBSOLETE size of the dataset (def: 100)
+            -(opt) n_fft: order of the n_fft analysis (def: 1024)
+        
+        OUTPUT:
+            - toyDataset object
         """
         # initializing variables
         self.Fs = Fe_Hz
-        self.batch_size = batchSize
+        self.batch_size = batch_size
         self.length_sample = length_sample
         self.n_fft = n_fft
 
@@ -58,7 +66,10 @@ class toyDataset(Dataset):
         
 
     def get_minibatch(self, batchSize=100, render=True):
-        """ Outputs a dataset for the bVAE. If render = True, recalculate a new 
+        """ 
+        DEPRECATED
+        
+        Outputs a dataset for the bVAE. If render = True, recalculate a new 
         minibatch. If False, just return the old one (self.toyDataset)
 
         INPUT:
