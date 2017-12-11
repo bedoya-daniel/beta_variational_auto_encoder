@@ -4,6 +4,7 @@ ATIAM 2017 """
 
 import librosa as lib
 import numpy as np
+import torch as to
 
 class audioEngine:
     def __init__(self,Fs_Hz=16000, n_fft=1024):
@@ -30,9 +31,9 @@ class audioEngine:
         # Sampling parameters
         Fs = self.Fs # Sampling rate
         Ts = 1.0/Fs
-        length = 1.0 # length of the signal (in seconds)
-        N = int(Fs*length) # number of samples
-        t = np.arange(0, length, Ts) # time vector
+        length = sound_length/Fs # length of the signal (in secondes)
+        N = sound_length # number of samples
+        t = np.arange(0,N,1)*Ts # time vector
         
         # Additive synthesis
         n_modes = 10 # nombre de modes
@@ -62,7 +63,8 @@ class audioEngine:
         noise = a*noise
         
         # Final signal
-        y = x + noise
+        #y = x + noise
+        y = x
         y = y/max(y)
         
         return y
@@ -70,6 +72,8 @@ class audioEngine:
 
     def spectrogram(self, data):
         """ Returns the absolute value of the stft of the array of sounds 'data'
+        flattened on a line vector.
+        Size : (1, N_fft * N_frame)
         
         INPUT:
             data: array of n sounds (n*SOUND_LENGTH)
@@ -83,11 +87,12 @@ class audioEngine:
         (M,N) = np.shape(data)
         
         # Allocating the memory needed
-        spectrograms = [lib.stft(data[1], n_fft=self.n_fft) * 0 for i in xrange(M)]
+        temp_spec_flattened = lib.stft(data[0], n_fft=self.n_fft)#.reshape(1,-1)*0
+        spectrograms = [np.zeros_like(temp_spec_flattened) for i in xrange(M)]
 
         # FOR LOOP: computing spectrogram
         for i in xrange(M):
-            spectrograms[i] = np.abs( lib.stft(data[i], n_fft=self.n_fft) )
+            spectrograms[i] = np.abs( lib.stft(data[i], n_fft=self.n_fft) )#.reshape(1,-1)
 
         return spectrograms
     

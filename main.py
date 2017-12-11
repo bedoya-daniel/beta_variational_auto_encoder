@@ -14,7 +14,7 @@ from torchvision import datasets
 from torchvision import transforms
 
 from framework import modVAE
-from framework.utils import to_var
+from framework.utils import to_var,zdim_analysis
 
 from toyDataset import dataset as dts
 import matplotlib.pyplot as plt
@@ -22,46 +22,50 @@ from numpy.random import randint
 import numpy as np
 
 import librosa
+
 #%% PARAMETERS
 # Parameters, dataset
-N_FFT = 1024
-N_EXAMPLES = 100
+N_FFT = 512
+MNBATCH_SIZE = 20
 #LEN_EXAMPLES = 38400
-LEN_EXAMPLES = 128000
+LEN_EXAMPLES = 30000
 # Net parameters
-Z_DIM, H_DIM = 5, 100
+Z_DIM, H_DIM = 5, 400
+FS = 16000
 
 #%% Importing DATASET
 # Creating dataset
-DATASET = dts.toyDataset(batchSize=N_EXAMPLES,length_sample=LEN_EXAMPLES, n_fft=N_FFT)
-_ = DATASET.get_minibatch()
+DATASET = dts.toyDataset(length_sample=LEN_EXAMPLES, 
+                         n_fft=N_FFT, 
+                         Fe_Hz=FS)
 
-# dataset = DATASET.get_minibatch()
 DATA_LOADER = torch.utils.data.DataLoader(dataset=DATASET,
-                                            batch_size = N_EXAMPLES,
-                                            shuffle=False)
+                                            batch_size = MNBATCH_SIZE,
+                                            shuffle=True)
 
 #%% Saving original image
-FIXED_INDEX = randint(N_EXAMPLES)
+FIXED_INDEX = randint(MNBATCH_SIZE)
 
 # Saving an item from the dataset to debug
-FIXED_X, FIXED_X_PARAMS = DATASET.__getitem__(FIXED_INDEX)
-FIXED_X = to_var(torch.Tensor(FIXED_X.contiguous())).view(FIXED_X.size(0), -1)
+DATA_ITER = iter(DATA_LOADER)
+FIXED_X,_ = next(DATA_ITER)
+FIXED_X = torch.Tensor(FIXED_X).view(FIXED_X.size(0), -1).squeeze()
 HEIGHT,WIDTH = FIXED_X.size()
 
-# SAVING fixed x as an image
-torchvision.utils.save_image(DATASET.__getitem__(FIXED_INDEX)[0].contiguous(), 
-                            './data/SOUND/real_images.png',
-                            normalize=False)
+#%% SAVING fixed x as an image
+FIXED_X = to_var(FIXED_X)
+reconst_images = FIXED_X.view(MNBATCH_SIZE,1,N_FFT/2+1,-1)
+torchvision.utils.save_image(reconst_images.data.cpu(),'./data/SOUND/original_images.png')
+
 
 #%% CREATING THE Beta-VAE
 
-betaVAE = modVAE.VAE(image_size= WIDTH,z_dim=Z_DIM, h_dim=H_DIM)
+betaVAE = modVAE.VAE(image_size=WIDTH, z_dim=Z_DIM, h_dim=H_DIM)
 
 # BETA: Regularisation factor
 # 0: Maximum Likelihood
 # 1: Bayes solution
-BETA = 1
+BETA = 10
 
 # GPU computing if available
 if torch.cuda.is_available():
@@ -71,24 +75,27 @@ if torch.cuda.is_available():
 # OPTIMIZER
 OPTIMIZER = torch.optim.Adam(betaVAE.parameters(), lr=0.001)
 
-ITER_PER_EPOCH = N_EXAMPLES
-NB_EPOCH = 15;
+ITER_PER_EPOCH = len(DATASET)/MNBATCH_SIZE
+NB_EPOCH = 30;
 
 
 #%%
 """ TRAINING """
 for epoch in range(NB_EPOCH):    
     # Epoch
-    CURRENT_ITERATION = 0;
-    for images,params in DATASET:
-        CURRENT_ITERATION = CURRENT_ITERATION + 1
-        
+    print(' ')
+    print('=======================================')
+    print('| - | - | - | EPOCH [%d/%d] | - | - | - '%(epoch+1,NB_EPOCH))
+    print('=======================================')
+    print(' ')
+    for i,(images,params) in enumerate(DATA_LOADER):
+
         # Formatting
-        images = to_var(torch.Tensor(images.contiguous())).view(images.size(0), -1)
+        images = to_var(torch.Tensor(images).view(1,MNBATCH_SIZE,-1).squeeze())
         out, mu, log_var = betaVAE(images)
 
         # Compute reconstruction loss and KL-divergence
-        reconst_loss = F.binary_cross_entropy(out, images, size_average=False)
+        reconst_loss = F.binary_cross_entropy(out, images, size_average=True)
         kl_divergence = torch.sum(0.5 * (mu**2
                                          + torch.exp(log_var)
                                          - log_var -1))
@@ -101,12 +108,9 @@ for epoch in range(NB_EPOCH):
 
         # PRINT
         # Prints stats at each epoch
-        if CURRENT_ITERATION % 100 == 0:
-            print ("Epoch[%d/%d], Step [%d/%d], Total Loss: %.4f, "
-                   "Reconst Loss: %.4f, KL Div: %.7f"
-                   %(epoch+1,
-                     NB_EPOCH,
-                     CURRENT_ITERATION,
+        if i % MNBATCH_SIZE == 0:
+            print ("Step [%d/%d], Total Loss: %.2f Reconst Loss: %.2f, KL Div: %.3f"
+                   %(i,
                      ITER_PER_EPOCH,
                      total_loss.data[0],
                      reconst_loss.data[0],
@@ -115,31 +119,26 @@ for epoch in range(NB_EPOCH):
 
     # Save the reconstructed images
     reconst_images, _, _ = betaVAE(FIXED_X)
-    #reconst_images = reconst_images.view(reconst_images.size(0), 1, 28, 28)
-    torchvision.utils.save_image(reconst_images.data.cpu(),
-                                 './data/SOUND/reconst_images_%d.png' %(epoch+1))
+    reconst_images = reconst_images.view(MNBATCH_SIZE,1,N_FFT/2+1,-1)
+    torchvision.utils.save_image(reconst_images.data.cpu(),'./data/SOUND/reconst_images_%d.png' %(epoch+1))
+    
 #%% SAMPLING FROM LATENT SPACE
 # Random input
-FIXED_Z = torch.randn(HEIGHT, Z_DIM)
+FIXED_Z = zdim_analysis(MNBATCH_SIZE, Z_DIM, 4, -20, 20)
+
+
 FIXED_Z = to_var(torch.Tensor(FIXED_Z.contiguous()))
 
 # Sampling from model, reconstructing from spectrogram
 sampled_image = betaVAE.sample(FIXED_Z)
-sampled_image_numpy = sampled_image.data.numpy()
+reconst_images = sampled_image.view(MNBATCH_SIZE,1,N_FFT/2+1,-1)
+torchvision.utils.save_image(reconst_images.data.cpu(),'./data/SOUND/sampled_images.png')
 
 #%%
-plt.figure
-plt.subplot(1,2,1)
-plt.imshow(sampled_image_numpy)
-plt.title('Sampled image from latent space')
-plt.subplot(1,2,2)
-plt.imshow(FIXED_X.data.numpy())
-plt.title('Original image')
-#%%
-reconst_sound = DATASET.audio_engine.griffinlim(sampled_image_numpy, N_iter=250)
+sampled_image_numpy = sampled_image.data.numpy()
+sampled_image_numpy =sampled_image_numpy[0,:].reshape(N_FFT/2+1,-1)
+
+reconst_sound = DATASET.audio_engine.griffinlim(sampled_image_numpy, N_iter=500)
 output_name = 'sampled_sound.wav'
 librosa.output.write_wav('data/SOUND/sampled_sound.wav',reconst_sound,DATASET.Fs)
 
-# Saving spectrogram image
-torchvision.utils.save_image(sampled_image.data.cpu(),
-                             './data/SOUND/sampled_image.png')
