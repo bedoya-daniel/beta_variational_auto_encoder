@@ -35,9 +35,8 @@ FS = 16000
 
 #%% Importing DATASET
 # Creating dataset
-DATASET = dts.toyDataset(batchSize=MNBATCH_SIZE,
-                         length_sample=LEN_EXAMPLES, 
-                         n_fft=N_FFT,
+DATASET = dts.toyDataset(length_sample=LEN_EXAMPLES, 
+                         n_fft=N_FFT, 
                          Fe_Hz=FS)
 
 DATA_LOADER = torch.utils.data.DataLoader(dataset=DATASET,
@@ -111,7 +110,8 @@ for epoch in range(NB_EPOCH):
         # Prints stats at each epoch
         if i % MNBATCH_SIZE == 0:
             print ("Step [%d/%d], Total Loss: %.2f Reconst Loss: %.2f, KL Div: %.3f"
-                   %(ITER_PER_EPOCH,
+                   %(i,
+                     ITER_PER_EPOCH,
                      total_loss.data[0],
                      reconst_loss.data[0],
                      kl_divergence.data[0])
