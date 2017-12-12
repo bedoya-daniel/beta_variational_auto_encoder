@@ -11,7 +11,7 @@ class audioEngine:
         self.Fs = Fs_Hz
         self.n_fft = n_fft
         
-    def render_sound(self, params, sound_length):
+    def render_sound(self, params, sound_length, n_modes=10):
         """ Render the sample from a dictionnary of parameters
 
         INPUT: 
@@ -36,7 +36,6 @@ class audioEngine:
         t = np.arange(0,N,1)*Ts # time vector
         
         # Additive synthesis
-        n_modes = 10 # nombre de modes
         if harmonicPresence == 0: # tous les modes
             modes = np.arange(1, n_modes+1)
         elif harmonicPresence == 1: # que les harmoniques impaires
@@ -56,18 +55,18 @@ class audioEngine:
             x = x + amp[k]*np.sin(2*np.pi*freq[k]*t)
                 
         # Noise
-        noise = (np.random.rand(N) - 0.5) * 2
-        energy_x = np.sum(pow(np.abs(x), 2))
-        energy_noise = np.sum(pow(np.abs(noise), 2))
-        a = np.sqrt(energy_x/(energy_noise*SNR))
-        noise = a*noise
+        # noise = (np.random.rand(N) - 0.5) * 2
+        # energy_x = np.sum(pow(np.abs(x), 2))
+        # energy_noise = np.sum(pow(np.abs(noise), 2))
+        # a = np.sqrt(energy_x/(energy_noise*SNR))
+        # noise = a*noise
         
         # Final signal
         #y = x + noise
         y = x
         y = y/max(y)
         
-        return y
+        return np.real(y)
 
 
     def spectrogram(self, data):
@@ -92,8 +91,8 @@ class audioEngine:
 
         # FOR LOOP: computing spectrogram
         for i in xrange(M):
-            spectrograms[i] = np.abs( lib.stft(data[i], n_fft=self.n_fft) )#.reshape(1,-1)
-
+            spectrograms[i] = np.abs(lib.stft(data[i], n_fft=self.n_fft))
+    
         return spectrograms
     
         # La fonction prend en paramètres un spectrogramme S    

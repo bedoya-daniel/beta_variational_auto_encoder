@@ -13,11 +13,11 @@ class parameterSpace:
     def __init__(self):
         # Initialisation
         # paramters:          start, inc, stop
-        self.params = {'f0' : [100, 100, 1000],
-                       'PS' : [-0.01, -0.01, -0.01],
+        self.params = {'f0' : [100, 100, 100],
+                       'PS' : [-0.1, -0.5, -5],
                        'PH' : [0, 1 ,1],
-                       'inh': [0, 0.5, 10],
-                       'SnR' : [1, 0.08,1]}
+                       'inh': [0, 0.01, 0.5],
+                       'SnR' : [1, 1,1]}
 
         self.parameter_space = dict.fromkeys(self.params)
         self.N_samples = None # number of samples to generate

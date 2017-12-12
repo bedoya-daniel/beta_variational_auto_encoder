@@ -86,7 +86,7 @@ class toyDataset(Dataset):
         """
         param = self.paramSpace.permutations_array[index]
         image = self.spectrograms[index].reshape(1,-1)
-        image = image/np.max(np.abs(image))
+        #image = image/np.max(np.abs(image))
         return image,param
 
     def __len__(self):

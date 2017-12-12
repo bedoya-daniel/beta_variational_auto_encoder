@@ -23,7 +23,7 @@ def to_var(tensor):
 
 # ------------------------------------------------------------------------
     
-def zdim_analysis(BATCH_SIZE, TOTAL_Z_DIM, Z_DIM, start=0, stop=100):
+def zdim_analysis(BATCH_SIZE, TOTAL_Z_DIM, Z_DIM, start=0., stop=100.):
     """ Returns a matrix where only one dimension changes 
     
     Arguments:
@@ -37,8 +37,21 @@ def zdim_analysis(BATCH_SIZE, TOTAL_Z_DIM, Z_DIM, start=0, stop=100):
     Returns:
         - sampling_data: desired matrix [BATCH_SIZE * TOTAL_Z_DIM]
     """
-    a = torch.arange(start, stop, step=(np.abs(stop-start)/BATCH_SIZE))
-    b = torch.ones(BATCH_SIZE, Z_DIM-1)
-    c = torch.ones(BATCH_SIZE, TOTAL_Z_DIM-Z_DIM)
+    Z_DIM = Z_DIM + 1
+    BATCH_SIZE, start, stop = BATCH_SIZE, start, stop
+    STEP = float(stop-start)/float(BATCH_SIZE-1)
     
-    return torch.cat((b,a,c),dim=1)
+    a = torch.arange(start, stop, step=STEP)
+    
+    if Z_DIM == 1:        
+        c = torch.ones(BATCH_SIZE, TOTAL_Z_DIM-1)
+        out = torch.cat( (a.unsqueeze(1),c),dim=1)        
+    elif Z_DIM-1 == TOTAL_Z_DIM:
+        b = torch.ones(BATCH_SIZE, TOTAL_Z_DIM-1)
+        out = torch.cat((b,a),dim=1)
+    else:
+        b = torch.ones(BATCH_SIZE, Z_DIM)
+        c = torch.ones(BATCH_SIZE, TOTAL_Z_DIM-Z_DIM-1)
+        out = torch.cat((b,a,c),dim=1)
+
+    return out
