@@ -1,9 +1,8 @@
 #-*-encoding:UTF-8-*-
 """
 Beta Variational Auto-Encoder
-Derived from Pytorch tutorial at
-https://github.com/yunjey/pytorch-tutorial
 """
+
 #%% Librairies
 import torch
 import torch.nn.functional as F
@@ -25,19 +24,26 @@ import librosa
 
 #%% PARAMETERS
 # Parameters, dataset
-N_FFT = 512
+N_FFT = 1024
 MNBATCH_SIZE = 20
 #LEN_EXAMPLES = 38400
-LEN_EXAMPLES = 30000
+LEN_EXAMPLES = 16000
 # Net parameters
-Z_DIM, H_DIM = 5, 400
-FS = 16000
+Z_DIM, H_DIM = 5, 100
+FS = 8000
 
 #%% Importing DATASET
 # Creating dataset
 DATASET = dts.toyDataset(length_sample=LEN_EXAMPLES, 
                          n_fft=N_FFT, 
                          Fe_Hz=FS)
+
+SPEC_LENGTH = np.shape(DATASET.__getitem__(9)[0])[1]
+for i in xrange(25,50):
+    if (SPEC_LENGTH % i) == 0:
+        MNBATCH_SIZE = i
+        print('Mini_batch size is %d'%(MNBATCH_SIZE))
+        break
 
 DATA_LOADER = torch.utils.data.DataLoader(dataset=DATASET,
                                             batch_size = MNBATCH_SIZE,
@@ -59,13 +65,13 @@ torchvision.utils.save_image(reconst_images.data.cpu(),'./data/SOUND/original_im
 
 
 #%% CREATING THE Beta-VAE
-
 betaVAE = modVAE.VAE(image_size=WIDTH, z_dim=Z_DIM, h_dim=H_DIM)
 
 # BETA: Regularisation factor
 # 0: Maximum Likelihood
 # 1: Bayes solution
-BETA = 10
+BETA = 0.5
+
 
 # GPU computing if available
 if torch.cuda.is_available():
@@ -76,7 +82,7 @@ if torch.cuda.is_available():
 OPTIMIZER = torch.optim.Adam(betaVAE.parameters(), lr=0.001)
 
 ITER_PER_EPOCH = len(DATASET)/MNBATCH_SIZE
-NB_EPOCH = 30;
+NB_EPOCH = 100;
 
 
 #%%
@@ -84,14 +90,14 @@ NB_EPOCH = 30;
 for epoch in range(NB_EPOCH):    
     # Epoch
     print(' ')
-    print('=======================================')
-    print('| - | - | - | EPOCH [%d/%d] | - | - | - '%(epoch+1,NB_EPOCH))
-    print('=======================================')
+    print('\t \t  /=======================================\\')
+    print('\t \t  | - | - | - | EPOCH [%d/%d] | - | - | - | '%(epoch+1, NB_EPOCH))
+    print('\t \t  \\=======================================/')
     print(' ')
     for i,(images,params) in enumerate(DATA_LOADER):
 
         # Formatting
-        images = to_var(torch.Tensor(images).view(1,MNBATCH_SIZE,-1).squeeze())
+        images = to_var(torch.Tensor(images).squeeze())
         out, mu, log_var = betaVAE(images)
 
         # Compute reconstruction loss and KL-divergence
@@ -108,8 +114,8 @@ for epoch in range(NB_EPOCH):
 
         # PRINT
         # Prints stats at each epoch
-        if i % MNBATCH_SIZE == 0:
-            print ("Step [%d/%d], Total Loss: %.2f Reconst Loss: %.2f, KL Div: %.3f"
+        if i%10 == 0:
+            print ("Step [%d/%d] \t Total Loss: %.2f \t Reconst Loss: %.2f \t KL Div: %.3f"
                    %(i,
                      ITER_PER_EPOCH,
                      total_loss.data[0],
@@ -123,10 +129,7 @@ for epoch in range(NB_EPOCH):
     torchvision.utils.save_image(reconst_images.data.cpu(),'./data/SOUND/reconst_images_%d.png' %(epoch+1))
     
 #%% SAMPLING FROM LATENT SPACE
-# Random input
-FIXED_Z = zdim_analysis(MNBATCH_SIZE, Z_DIM, 4, -20, 20)
-
-
+FIXED_Z = zdim_analysis(MNBATCH_SIZE, Z_DIM, Z_DIM, -1, 1)
 FIXED_Z = to_var(torch.Tensor(FIXED_Z.contiguous()))
 
 # Sampling from model, reconstructing from spectrogram
@@ -136,7 +139,7 @@ torchvision.utils.save_image(reconst_images.data.cpu(),'./data/SOUND/sampled_ima
 
 #%%
 sampled_image_numpy = sampled_image.data.numpy()
-sampled_image_numpy =sampled_image_numpy[0,:].reshape(N_FFT/2+1,-1)
+sampled_image_numpy =sampled_image_numpy[1,:].reshape(N_FFT/2+1,-1)
 
 reconst_sound = DATASET.audio_engine.griffinlim(sampled_image_numpy, N_iter=500)
 output_name = 'sampled_sound.wav'
