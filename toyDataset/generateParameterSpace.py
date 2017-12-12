@@ -16,7 +16,7 @@ class parameterSpace:
         self.params = {'f0' : [100, 100, 100],
                        'PS' : [-0.1, -0.5, -5],
                        'PH' : [0, 1 ,1],
-                       'inh': [0, 0.01, 0.5],
+                       'inh': [0, 0.1, 0.5],
                        'SnR' : [1, 1,1]}
 
         self.parameter_space = dict.fromkeys(self.params)

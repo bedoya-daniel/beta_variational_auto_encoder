@@ -65,6 +65,7 @@ class audioEngine:
         #y = x + noise
         y = x
         y = y/max(y)
+        y = np.ndarray.astype(y, np.float,copy=False)
         
         return np.real(y)
 

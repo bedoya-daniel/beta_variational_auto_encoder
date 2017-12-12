@@ -19,7 +19,11 @@ import generateParameterSpace as gps
 import audioEngine as aud
 
 class toyDataset(Dataset):
-    def __init__(self, Fe_Hz=8000, length_sample=64000, batch_size=100, n_fft=1024):
+    def __init__(self, Fe_Hz=8000, 
+                 length_sample=64000, 
+                 batch_size=100, 
+                 n_fft=1024, 
+                 data='spectro'):
         """ ToyDataset object. When initialized, synthesized the dataset with
         the specifications defined in the parameter_space objet 
 
@@ -37,6 +41,7 @@ class toyDataset(Dataset):
         self.batch_size = batch_size
         self.length_sample = length_sample
         self.n_fft = n_fft
+        self.data = data
 
         # init data structures
         self.sound_data = [];
@@ -67,6 +72,7 @@ class toyDataset(Dataset):
             self.sound_data[i] = \
             self.audio_engine.render_sound(params, self.length_sample)
             
+            
         self.spectrograms = self.audio_engine.spectrogram(self.sound_data)
         
 
@@ -85,9 +91,13 @@ class toyDataset(Dataset):
             pour la première clé et un ndarray de taille [1xparam]
         """
         param = self.paramSpace.permutations_array[index]
-        image = self.spectrograms[index].reshape(1,-1)
-        #image = image/np.max(np.abs(image))
-        return image,param
+        if self.data == 'spectro':
+            data = self.spectrograms[index].reshape(1,-1)
+            data = data/np.max(np.abs(data))
+        elif self.data == 'sound':
+            data = self.sound_data[index]
+        
+        return data,param
 
     def __len__(self):
         """ Returns the length of the Dataset, e.g. the number of samples
