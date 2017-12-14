@@ -7,6 +7,10 @@ import numpy as np
 import torch as to
 
 class audioEngine:
+    """ audioEngine class
+    This class contains the methods that handles synthesis from a
+    parameterSpace object 
+    """
     def __init__(self,Fs_Hz=16000, n_fft=1024):
         self.Fs = Fs_Hz
         self.n_fft = n_fft
@@ -14,14 +18,14 @@ class audioEngine:
     def render_sound(self, params, sound_length, n_modes=10):
         """ Render the sample from a dictionnary of parameters
 
-        INPUT: 
+        Arguments: 
             - Dictionnary of parameters
 
-        OUTPUT:
+        Returns:
             - Numpy array of size (N x 1) containing the sample
         """
-
-         # Retrieve parameters
+        ### INITIALIZATION
+        # Retrieve parameters from dict
         f0 = params['f0']
         slope = params['PS']
         harmonicPresence = params['PH']
@@ -54,17 +58,11 @@ class audioEngine:
         for k in range(n_modes-1):
             x = x + amp[k]*np.sin(2*np.pi*freq[k]*t)
                 
-        # Noise
-        # noise = (np.random.rand(N) - 0.5) * 2
-        # energy_x = np.sum(pow(np.abs(x), 2))
-        # energy_noise = np.sum(pow(np.abs(noise), 2))
-        # a = np.sqrt(energy_x/(energy_noise*SNR))
-        # noise = a*noise
         
-        # Final signal
-        #y = x + noise
+        ### FORMATTING
         y = x
         y = y/max(y)
+        y = np.ndarray.astype(y, np.float,copy=False)
         
         return np.real(y)
 
@@ -74,10 +72,10 @@ class audioEngine:
         flattened on a line vector.
         Size : (1, N_fft * N_frame)
         
-        INPUT:
+        Arguments:
             data: array of n sounds (n*SOUND_LENGTH)
             
-        OUTPUT:
+        Returns:
             output: absolute value of the stft of every sound in the sound array
         
         """
@@ -95,19 +93,15 @@ class audioEngine:
     
         return spectrograms
     
-        # La fonction prend en paramètres un spectrogramme S    
-        # et le nombre de pts de la NFFT désirée.
-        # Elle retourne un vecteur correspondant à l'audio reconstruit
-    
     def griffinlim(self, S, N_iter=100):
         """ Returns a sound, reconstructed from a spectrogram with NFFT points.
         Griffin and lim algorithm
         
-        INPUT:
+        Arguments:
             - S: spectrogram (array) (absolute value of the stft)
             - N_iter (def: 100): number of iteration for the reconstruction
         
-        OUTPUT:
+        Returns:
             - x: signal """
         # ---- INIT ----
         # Create empty STFT & Back from log amplitude
