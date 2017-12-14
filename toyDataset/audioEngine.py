@@ -11,9 +11,9 @@ class audioEngine:
     This class contains the methods that handles synthesis from a
     parameterSpace object 
     """
-    def __init__(self,Fs_Hz=16000, n_fft=1024):
+    def __init__(self,Fs_Hz=16000, n_bins=1024):
         self.Fs = Fs_Hz
-        self.n_fft = n_fft
+        self.n_bins = n_bins
         
     def render_sound(self, params, sound_length, n_modes=10):
         """ Render the sample from a dictionnary of parameters
@@ -68,9 +68,8 @@ class audioEngine:
 
 
     def spectrogram(self, data):
-        """ Returns the absolute value of the stft of the array of sounds 'data'
-        flattened on a line vector.
-        Size : (1, N_fft * N_frame)
+        """ Returns the absolute value of the stft of the array of sounds 'data.
+        Size : (N_fft, N_frame)
         
         Arguments:
             data: array of n sounds (n*SOUND_LENGTH)
@@ -79,20 +78,49 @@ class audioEngine:
             output: absolute value of the stft of every sound in the sound array
         
         """
+        # --- INIT ---
         # M: number of sounds
         # N: number of samples
         (M,N) = np.shape(data)
         
         # Allocating the memory needed
-        temp_spec_flattened = lib.stft(data[0], n_fft=self.n_fft)#.reshape(1,-1)*0
-        spectrograms = [np.zeros_like(temp_spec_flattened) for i in xrange(M)]
+        temp_spec = lib.stft(data[0], n_bins=self.n_bins)
+        spectrograms = [np.zeros_like(temp_spec) for i in xrange(M)]
 
         # FOR LOOP: computing spectrogram
         for i in xrange(M):
-            spectrograms[i] = np.abs(lib.stft(data[i], n_fft=self.n_fft))
+            spectrograms[i] = np.abs(lib.stft(data[i], n_bins=self.n_bins))
     
         return spectrograms
+ 
+    def cqt(self, data):
+        """ Returns the absolute value of the CQT of the array of sounds 'data'
+        
+        Arguments:
+            data: array of n sounds (n*SOUND_LENGTH)
+            
+        Returns:
+            output: CQT
+        
+        """
+        # --- INIT ---
+        # M: number of sounds
+        # N: number of samples
+        (M,N) = np.shape(data)
+        
+        # Allocating the memory needed
+        temp_cqt = lib.core.cqt(data[0], n_bins=self.n_bins)
+        cqt = [np.zeros_like(temp_cqt) for i in xrange(M)]
+
+        # cleaning memory
+        del(temp_cqt)
+
+        # FOR LOOP: computing spectrogram
+        for i in xrange(M):
+            cqt[i] = np.abs(lib.core.cqt(data[i], n_bins=self.n_bins))
     
+        return cqt
+   
     def griffinlim(self, S, N_iter=100):
         """ Returns a sound, reconstructed from a spectrogram with NFFT points.
         Griffin and lim algorithm
@@ -105,8 +133,8 @@ class audioEngine:
             - x: signal """
         # ---- INIT ----
         # Create empty STFT & Back from log amplitude
-        n_fft = S.shape[0]
-        S = np.log1p(np.abs(S))
+        n_bins = S.shape[0]
+        S = np.log10(np.abs(S))
 
         a = np.exp(S) - 1
         
@@ -117,6 +145,6 @@ class audioEngine:
         for i in range(N_iter):
             S = a * np.exp(1j*p)
             x = lib.istft(S)
-            p = np.angle(lib.stft(x, self.n_fft))
+            p = np.angle(lib.stft(x, self.n_bins))
     
         return np.real(x)
