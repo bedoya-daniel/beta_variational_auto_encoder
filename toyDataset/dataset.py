@@ -5,7 +5,6 @@
     toydataset.generateParameterSpace and toydataset.audioEngine. The first
     makes a cardinal product of the specficied parameters. The second contains
     the method to synthesize the samples.
-    
     """
 
 # Librairies
@@ -32,28 +31,32 @@ class toyDataset(Dataset):
             -(opt) length_sample: number of sample per sound example (def:64000)
             -(opt) batch_size: OBSOLETE size of the dataset (def: 100)
             -(opt) n_fft: order of the n_fft analysis (def: 1024)
-        
+
         Returns:
             - toyDataset object
         """
-        # Initializing scalar variables
+        ### INITIALIZATION
+        # Scalar variables
         self.Fs = Fe_Hz
         self.batch_size = batch_size
         self.length_sample = length_sample
         self.n_fft = n_fft
         self.data = data
 
-        # init data structures
+        # Data structures
         self.sound_data = [];
         self.spectrograms = [];
 
-        # Create parameterSpace
+        ### EXERNAL OBJECTS
+        # Parameter space
         self.paramSpace = gps.parameterSpace()
         self.paramSpace.generate_parameter_space()
 
-        # Create the audio engine for audio rendering
+        # Audio engine for audio rendering
         self.audio_engine = aud.audioEngine(Fs_Hz=self.Fs,n_fft=self.n_fft)
         
+        ### RENDERING DATASET
+        # Render the dataset
         self.render_dataset()
         
     def render_dataset(self):
@@ -63,10 +66,12 @@ class toyDataset(Dataset):
             - self.sound_data: array containing all the sampled
             - self.spectrograms: array of spectrograms
         """
-
+        ### INITIALISATION
         # Allocating memory
         self.sound_data = np.zeros((self.paramSpace.N_samples, self.length_sample))
-        
+
+        ### RENDERING DATASET
+        # for loop on the parameter space
         for i in xrange(self.paramSpace.N_samples):
             params = self.paramSpace.param_dataset_dict[i]
             self.sound_data[i] = \
@@ -77,8 +82,8 @@ class toyDataset(Dataset):
         
 
     def __getitem__(self, index):
-        """ Returns a tuple containing a spectrogram and the parameters that
-        were used to generate the sound.
+        """ Returns a tuple containing a data (sound, spectrogram or cqt)
+        and the parameters that were used to generate the sound (label).
 
         Arguments:
             - index: index corresponding to a sample in the dataset

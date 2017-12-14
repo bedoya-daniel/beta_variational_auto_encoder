@@ -24,12 +24,12 @@ import librosa
 
 #%% PARAMETERS
 # Parameters, dataset
-N_FFT = 1024
+N_FFT = 512
 MNBATCH_SIZE = 20
 #LEN_EXAMPLES = 38400
 LEN_EXAMPLES = 16000
 # Net parameters
-Z_DIM, H_DIM = 5, 100
+Z_DIM, H_DIM = 100, 400
 FS = 8000
 
 #%% Importing DATASET
@@ -70,7 +70,7 @@ betaVAE = modVAE.VAE(image_size=WIDTH, z_dim=Z_DIM, h_dim=H_DIM)
 # BETA: Regularisation factor
 # 0: Maximum Likelihood
 # 1: Bayes solution
-BETA = 0.5
+BETA = 4
 
 
 # GPU computing if available
@@ -102,6 +102,7 @@ for epoch in range(NB_EPOCH):
 
         # Compute reconstruction loss and KL-divergence
         reconst_loss = F.binary_cross_entropy(out, images, size_average=True)
+
         kl_divergence = torch.sum(0.5 * (mu**2
                                          + torch.exp(log_var)
                                          - log_var -1))
@@ -129,7 +130,7 @@ for epoch in range(NB_EPOCH):
     torchvision.utils.save_image(reconst_images.data.cpu(),'./data/SOUND/reconst_images_%d.png' %(epoch+1))
     
 #%% SAMPLING FROM LATENT SPACE
-FIXED_Z = zdim_analysis(MNBATCH_SIZE, Z_DIM, Z_DIM, -1, 1)
+FIXED_Z = zdim_analysis(MNBATCH_SIZE, Z_DIM, 50, -20, 20)
 FIXED_Z = to_var(torch.Tensor(FIXED_Z.contiguous()))
 
 # Sampling from model, reconstructing from spectrogram

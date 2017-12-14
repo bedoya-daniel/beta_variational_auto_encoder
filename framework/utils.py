@@ -44,14 +44,14 @@ def zdim_analysis(BATCH_SIZE, TOTAL_Z_DIM, Z_DIM, start=0., stop=100.):
     a = torch.arange(start, stop, step=STEP)
     
     if Z_DIM == 1:        
-        c = torch.ones(BATCH_SIZE, TOTAL_Z_DIM-1)
+        c = torch.zeros(BATCH_SIZE, TOTAL_Z_DIM-1)
         out = torch.cat( (a.unsqueeze(1),c),dim=1)        
     elif Z_DIM-1 == TOTAL_Z_DIM:
-        b = torch.ones(BATCH_SIZE, TOTAL_Z_DIM-1)
+        b = torch.zeros(BATCH_SIZE, TOTAL_Z_DIM-1)
         out = torch.cat((b,a),dim=1)
     else:
-        b = torch.ones(BATCH_SIZE, Z_DIM)
-        c = torch.ones(BATCH_SIZE, TOTAL_Z_DIM-Z_DIM-1)
+        b = torch.zeros(BATCH_SIZE, Z_DIM)
+        c = torch.zeros(BATCH_SIZE, TOTAL_Z_DIM-Z_DIM-1)
         out = torch.cat((b,a,c),dim=1)
 
     return out
