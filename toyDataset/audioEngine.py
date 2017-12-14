@@ -117,7 +117,8 @@ class audioEngine:
 
         # FOR LOOP: computing spectrogram
         for i in xrange(M):
-            cqt[i] = np.abs(lib.core.cqt(data[i], n_bins=self.n_bins))
+            cqt[i] = np.abs(lib.core.cqt(data[i], n_bins=self.n_bins),
+                            dtype=np.dtype('float'))
     
         return cqt
    

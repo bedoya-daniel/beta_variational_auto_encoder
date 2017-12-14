@@ -133,6 +133,7 @@ class toyDataset(Dataset):
             data = self.sound_data[index]
         elif self.data == 'cqt':
             data = self.cqt[index].reshape(1, -1)
+            data = np.array(data, dtype=np.dtype('float'))
         else:
             raise ValueError('Expected spectro or cqt, but got {}. Select a\
             correct representation name'%(self.data))
