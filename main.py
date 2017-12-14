@@ -9,11 +9,9 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 
 import torchvision
-from torchvision import datasets
-from torchvision import transforms
 
 from framework import modVAE
-from framework.utils import to_var,zdim_analysis
+from framework.utils import to_var, zdim_analysis
 
 from toyDataset import dataset as dts
 import matplotlib.pyplot as plt
@@ -24,8 +22,8 @@ import librosa
 
 #%% PARAMETERS
 # Parameters, dataset
-N_FFT = 512
-MNBATCH_SIZE = 20
+N_FFT = 100
+BATCH_SIZE = 20
 #LEN_EXAMPLES = 38400
 LEN_EXAMPLES = 16000
 # Net parameters
@@ -34,33 +32,34 @@ FS = 8000
 
 #%% Importing DATASET
 # Creating dataset
-DATASET = dts.toyDataset(length_sample=LEN_EXAMPLES, 
-                         n_fft=N_FFT, 
-                         Fe_Hz=FS)
+DATASET = dts.toyDataset(length_sample=LEN_EXAMPLES,
+                         n_bins=N_FFT,
+                         Fe_Hz=FS,
+                         data='cqt')
 
-SPEC_LENGTH = np.shape(DATASET.__getitem__(9)[0])[1]
-for i in xrange(25,50):
-    if (SPEC_LENGTH % i) == 0:
-        MNBATCH_SIZE = i
-        print('Mini_batch size is %d'%(MNBATCH_SIZE))
+IMG_LENGTH = np.shape(DATASET.__getitem__(9)[0])[1]
+for i in xrange(25, 50):
+    if (IMG_LENGTH % i) == 0:
+        BATCH_SIZE = i
+        print('Mini_batch size is %d'%(BATCH_SIZE))
         break
 
 DATA_LOADER = torch.utils.data.DataLoader(dataset=DATASET,
-                                            batch_size = MNBATCH_SIZE,
-                                            shuffle=True)
+                                          batch_size =BATCH_SIZE,
+                                          shuffle=True)
 
 #%% Saving original image
-FIXED_INDEX = randint(MNBATCH_SIZE)
+FIXED_INDEX = randint(BATCH_SIZE)
 
 # Saving an item from the dataset to debug
 DATA_ITER = iter(DATA_LOADER)
 FIXED_X,_ = next(DATA_ITER)
-FIXED_X = torch.Tensor(FIXED_X).view(FIXED_X.size(0), -1).squeeze()
+FIXED_X = torch.Tensor(FIXED_X.float()).view(FIXED_X.size(0), -1).squeeze()
 HEIGHT,WIDTH = FIXED_X.size()
 
 #%% SAVING fixed x as an image
 FIXED_X = to_var(FIXED_X)
-reconst_images = FIXED_X.view(MNBATCH_SIZE,1,N_FFT/2+1,-1)
+reconst_images = FIXED_X.view(BATCH_SIZE,1,N_FFT,-1)
 torchvision.utils.save_image(reconst_images.data.cpu(),'./data/SOUND/original_images.png')
 
 
@@ -81,23 +80,23 @@ if torch.cuda.is_available():
 # OPTIMIZER
 OPTIMIZER = torch.optim.Adam(betaVAE.parameters(), lr=0.001)
 
-ITER_PER_EPOCH = len(DATASET)/MNBATCH_SIZE
-NB_EPOCH = 100;
+ITER_PER_EPOCH = len(DATASET)/BATCH_SIZE
+NB_EPOCH = 10;
 
 
 #%%
 """ TRAINING """
 for epoch in range(NB_EPOCH):    
     # Epoch
-    print(' ')
-    print('\t \t  /=======================================\\')
-    print('\t \t  | - | - | - | EPOCH [%d/%d] | - | - | - | '%(epoch+1, NB_EPOCH))
-    print('\t \t  \\=======================================/')
-    print(' ')
-    for i,(images,params) in enumerate(DATA_LOADER):
+    print ' '
+    print '\t \t  /=======================================\\'
+    print '\t \t  | - | - | - | EPOCH [%d/%d] | - | - | - | '%(epoch+1, NB_EPOCH)
+    print '\t \t  \\=======================================/'
+    print ' '
+    for i, (images, params) in enumerate(DATA_LOADER):
 
         # Formatting
-        images = to_var(torch.Tensor(images).squeeze())
+        images = to_var(torch.Tensor(images.float()).squeeze())
         out, mu, log_var = betaVAE(images)
 
         # Compute reconstruction loss and KL-divergence
@@ -126,17 +125,18 @@ for epoch in range(NB_EPOCH):
 
     # Save the reconstructed images
     reconst_images, _, _ = betaVAE(FIXED_X)
-    reconst_images = reconst_images.view(MNBATCH_SIZE,1,N_FFT/2+1,-1)
-    torchvision.utils.save_image(reconst_images.data.cpu(),'./data/SOUND/reconst_images_%d.png' %(epoch+1))
-    
+    reconst_images = reconst_images.view(BATCH_SIZE, 1, N_FFT, -1)
+    torchvision.utils.save_image(reconst_images.data.cpu(),
+                                 './data/CQT/reconst_images_%d.png' %(epoch+1))
+
 #%% SAMPLING FROM LATENT SPACE
-FIXED_Z = zdim_analysis(MNBATCH_SIZE, Z_DIM, 50, -20, 20)
+FIXED_Z = zdim_analysis(BATCH_SIZE, Z_DIM, 50, -20, 20)
 FIXED_Z = to_var(torch.Tensor(FIXED_Z.contiguous()))
 
 # Sampling from model, reconstructing from spectrogram
 sampled_image = betaVAE.sample(FIXED_Z)
-reconst_images = sampled_image.view(MNBATCH_SIZE,1,N_FFT/2+1,-1)
-torchvision.utils.save_image(reconst_images.data.cpu(),'./data/SOUND/sampled_images.png')
+reconst_images = sampled_image.view(BATCH_SIZE, 1, N_FFT, -1)
+torchvision.utils.save_image(reconst_images.data.cpu(), './data/CQT/sampled_images.png')
 
 #%%
 sampled_image_numpy = sampled_image.data.numpy()

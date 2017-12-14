@@ -17,9 +17,9 @@ class parameterSpace:
         # Initialisation
         # paramters:          start, inc, stop
         self.params = {'f0' : [50, 20, 50],
-                       'PS' : [-0.1, -0.01, -5],
+                       'PS' : [-0.1, -0.1, -0.2],
                        'PH' : [0, 1 ,1],
-                       'inh': [0, 0.01, 1],
+                       'inh': [0, 0.1, 1],
                        'SnR' : [1, 1,1]}
 
         self.parameter_space = dict.fromkeys(self.params)
