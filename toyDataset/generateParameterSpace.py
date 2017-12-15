@@ -16,10 +16,10 @@ class parameterSpace:
     def __init__(self):
         # Initialisation
         # paramters:          start, inc, stop
-        self.params = {'f0' : [50, 20, 50],
+        self.params = {'f0' : [50, 20, 2000],
                        'PS' : [-0.1, -0.1, -0.2],
                        'PH' : [0, 1 ,1],
-                       'inh': [0, 0.1, 1],
+                       'inh': [0, 0.01, 1],
                        'SnR' : [1, 1,1]}
 
         self.parameter_space = dict.fromkeys(self.params)
@@ -84,7 +84,7 @@ class parameterSpace:
         inh= self.parameter_space['inh']
         SnR= self.parameter_space['SnR']
         
-        ### PERMUTATIONS
+        ### PERMUTATIONS
         self.permutations = np.array(list(it.product(f0, PS, PH, inh, SnR)))
         self.N_samples = len(self.permutations)
         

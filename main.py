@@ -20,25 +20,42 @@ import numpy as np
 
 import librosa
 
+import os.path as pa
+import pickle
+
 #%% PARAMETERS
 # Parameters, dataset
 N_FFT = 100
-BATCH_SIZE = 20
+BATCH_SIZE = 50
 #LEN_EXAMPLES = 38400
-LEN_EXAMPLES = 16000
+LEN_EXAMPLES = 2000
 # Net parameters
-Z_DIM, H_DIM = 100, 400
+Z_DIM, H_DIM = 20, 400
 FS = 8000
 
 #%% Importing DATASET
+
 # Creating dataset
-DATASET = dts.toyDataset(length_sample=LEN_EXAMPLES,
-                         n_bins=N_FFT,
-                         Fe_Hz=FS,
-                         data='cqt')
+DATASET_FILEPATH = 'data/datasets/DATASET_simple.obj'
+
+# If there is no archive of the dataset, it needs to be rendered
+if not pa.isfile(DATASET_FILEPATH):
+    print 'Generating Dataset \n\n'
+    DATASET = dts.toyDataset(length_sample=LEN_EXAMPLES,
+                            n_bins=N_FFT,
+                            Fe_Hz=FS,
+                            data='cqt')
+    obj = DATASET
+    file_obj = open(DATASET_FILEPATH, 'w')
+    pickle.dump(obj, file_obj)
+    print 'File is {0}'.format(DATASET_FILEPATH)
+else:
+    # Otherwise, load the pickled archive
+    print 'Importing dataset at location {}'%(DATASET_FILEPATH)
+    DATASET = pickle.load(open(DATASET_FILEPATH,'rb'))
 
 IMG_LENGTH = np.shape(DATASET.__getitem__(9)[0])[1]
-for i in xrange(25, 50):
+for i in xrange(45, 75):
     if (IMG_LENGTH % i) == 0:
         BATCH_SIZE = i
         print('Mini_batch size is %d'%(BATCH_SIZE))
@@ -60,7 +77,7 @@ HEIGHT,WIDTH = FIXED_X.size()
 #%% SAVING fixed x as an image
 FIXED_X = to_var(FIXED_X)
 reconst_images = FIXED_X.view(BATCH_SIZE,1,N_FFT,-1)
-torchvision.utils.save_image(reconst_images.data.cpu(),'./data/SOUND/original_images.png')
+torchvision.utils.save_image(reconst_images.data.cpu(),'./data/CQT/original_images.png')
 
 
 #%% CREATING THE Beta-VAE
