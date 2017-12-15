@@ -40,17 +40,24 @@ class Attention(nn.Module):
 
     def init_hidden(self):
         # Before we've done anything, we don't have any hidden state
+
         # The axes semantics are (num_layers, minibatch_size, hidden_dim)
         return (Variable(torch.zeros(1, self.batch_size, self.h_dim)),
                 Variable(torch.zeros(1, self.batch_size, self.h_dim)))
         
     def get_initial_state(self, encoded):
-
         # apply the matrix on the first time step to get the initial s0
         fs = nn.Linear(self.z_dim, self.h_dim)
         s0 = F.tanh(fs(encoded[0,:]))
 
         # initialize a vector of (batchsize,output_dim)
+        # apply the matrix on the first time step to get the initial s0.
+        fs = nn.Linear(self.z_dim, self.h_dim)
+        s0 = F.tanh(fs(encoded[0,:]))
+        s0 = s0.view(self.batch_size,-1)
+
+        # initialize a vector of (batchsize,
+        # output_dim)
         y0 = Variable(torch.zeros(self.batch_size, self.sample_size))
 
         return [y0, s0]
@@ -96,6 +103,7 @@ class Attention(nn.Module):
             fa3 = nn.Linear(self.h_dim, 1)
             attention_input = fa1(_stm) + fa2(x_encoded)
             # calculate the attention probabilities
+
             # this relates how much other timesteps contributed to this one
             et = F.tanh(attention_input)
             et = fa3(et)
@@ -105,7 +113,7 @@ class Attention(nn.Module):
             
             # calculate the context vector
             context = torch.sum(torch.mul(at, x_encoded),0)
-            
+
             # ~~~> calculate new hidden state
             # first calculate the "r" gate:
             fr1 = nn.Linear(sample_size, self.h_dim)
@@ -131,6 +139,7 @@ class Attention(nn.Module):
             # new hidden state:
             st = (1-zt)*stm + zt * s_tp
             
+
             #calculate output:
             fo1 = nn.Linear(sample_size, sample_size)
             fo2 = nn.Linear(self.h_dim, sample_size)
@@ -140,4 +149,5 @@ class Attention(nn.Module):
             outputs = torch.cat((outputs, yt.view(1,batch_size,-1)),0)
             ytm, stm = yt, st
         outputs = outputs[1:,:]
+
         return outputs, [yt, st], mu, log_var
