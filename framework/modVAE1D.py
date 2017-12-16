@@ -2,6 +2,13 @@
 VAE with a convnet, for pure sound input
 """
 
+# Librairies
+import torch
+import torch.nn as nn
+from torch.autograd import Variable
+from framework.utils import to_var
+
+
 class conv1dVAE(nn.Module):
     """ Variational Audo-Encoder (VAE) class, with a 1D convolutional net """
 
@@ -25,7 +32,9 @@ class conv1dVAE(nn.Module):
         self.encoder = nn.Sequential(
             nn.Conv1d(1, out_conv_ch, kernel_size, stride=stride),
             nn.AdaptiveAvgPool1d(LENGTH_OUT_CONV1D),
-            nn.Linear(LENGTH_OUT_CONV1D, h_dim),
+            nn.Linear(LENGTH_OUT_CONV1D,1200),
+            nn.ReLU(),
+            nn.Linear(1200, h_dim),
             nn.Sigmoid(),
             nn.Linear(h_dim, z_dim*2),
             nn.Tanh())  # 2 for mean and variance.
@@ -33,14 +42,26 @@ class conv1dVAE(nn.Module):
         # DECODER
         self.decoder = nn.Sequential(
             nn.Linear(z_dim, h_dim),
-            nn.Tanh(),
-            nn.Linear(h_dim, LENGTH_OUT_CONV1D),
-            nn.Sigmoid(),
+            nn.ReLU(),
+            nn.Linear(h_dim, 1200),
+            nn.ReLU6(),
+            nn.Linear(1200, LENGTH_OUT_CONV1D),
             nn.ConvTranspose1d(out_conv_ch, 1, kernel_size ,stride=stride),
             nn.AdaptiveAvgPool1d(sound_length))
-        
-        #self.decoder.double()
-        #self.encoder.double()
+
+        # Initializing weights
+        self.encoder.apply(self.init_weight)
+        self.decoder.apply(self.init_weight)
+
+    def init_weight(self, module):
+        """ This function initialize the weight of a linear layer
+
+        Arguments:
+            - module: the sequential to initialize weights
+
+        """
+        if type(module) == nn.Linear:
+            nn.init.xavier_uniform(module.weight)
 
     def reparametrize(self, mu, log_var):
         """" Does the reparametrize trick on the beta-VAE:

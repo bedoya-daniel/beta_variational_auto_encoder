@@ -51,7 +51,7 @@ if not pa.isfile(DATASET_FILEPATH):
     print 'File is {0}'.format(DATASET_FILEPATH)
 else:
     # Otherwise, load the pickled archive
-    print 'Importing dataset at location {}'%(DATASET_FILEPATH)
+    print 'Importing dataset at location' + DATASET_FILEPATH
     DATASET = pickle.load(open(DATASET_FILEPATH,'rb'))
 
 IMG_LENGTH = np.shape(DATASET.__getitem__(9)[0])[1]
