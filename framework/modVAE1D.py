@@ -31,7 +31,7 @@ class conv1dVAE(nn.Module):
         # ENCODER
         self.encoder = nn.Sequential(
             nn.Conv1d(1, out_conv_ch, kernel_size, stride=stride),
-            nn.AdaptiveAvgPool1d(LENGTH_OUT_CONV1D),
+            nn.AdaptiveMaxPool1d(LENGTH_OUT_CONV1D),
             nn.Linear(LENGTH_OUT_CONV1D,1200),
             nn.ReLU(),
             nn.Linear(1200, h_dim),
@@ -47,7 +47,7 @@ class conv1dVAE(nn.Module):
             nn.ReLU6(),
             nn.Linear(1200, LENGTH_OUT_CONV1D),
             nn.ConvTranspose1d(out_conv_ch, 1, kernel_size ,stride=stride),
-            nn.AdaptiveAvgPool1d(sound_length))
+            nn.AdaptiveMaxPool1d(sound_length))
 
         # Initializing weights
         self.encoder.apply(self.init_weight)

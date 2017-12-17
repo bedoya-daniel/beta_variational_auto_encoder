@@ -31,8 +31,8 @@ MNBATCH_SIZE = 100
 #LEN_EXAMPLES = 38400
 LEN_EXAMPLES = 8000
 # Net parameters
-Z_DIM, H_DIM, CONV1D_OUT, STRIDE = 20, 700, 1, 1
-KERNEL_SIZE = 100
+Z_DIM, H_DIM, CONV1D_OUT, STRIDE = 10, 900, 1, 1
+KERNEL_SIZE = 250
 
 FS = 16000
 
@@ -95,7 +95,7 @@ betaVAE = modVAE1D.conv1dVAE(sound_length=HEIGHT*WIDTH,
 # BETA: Regularisation factor
 # 0: Maximum Likelihood
 # 1: Bayes solution
-BETA = 0.5
+BETA = 2
 
 
 # GPU computing if available
@@ -107,7 +107,7 @@ if torch.cuda.is_available():
 OPTIMIZER = torch.optim.Adagrad(betaVAE.parameters(), lr=0.001)
 
 ITER_PER_EPOCH = len(DATASET)/BATCH_SIZE
-NB_EPOCH = 50;
+NB_EPOCH = 100;
 
 
 #%%
@@ -162,7 +162,7 @@ for epoch in range(NB_EPOCH):
                                  './data/CQT/reconst_images_%d.png' %(epoch+1))
 
 #%% SAMPLING FROM LATENT SPACE
-FIXED_Z = zdim_analysis(BATCH_SIZE, Z_DIM, 5, -20, 10)
+FIXED_Z = zdim_analysis(BATCH_SIZE, Z_DIM, 3, -100, 100)
 
 FIXED_Z = to_var(torch.Tensor(FIXED_Z.contiguous())).unsqueeze(1)
 
@@ -172,9 +172,8 @@ reconst_images = sampled_image.view(BATCH_SIZE, 1, N_FFT, -1)
 torchvision.utils.save_image(reconst_images.data.cpu(), './data/CQT/sampled_images.png')
 
 #%%
-sampled_image_numpy = sampled_image.data.numpy()
-sampled_image_numpy =sampled_image_numpy[1,:].reshape(N_FFT/2+1,-1)
-
-reconst_sound = DATASET.audio_engine.griffinlim(sampled_image_numpy, N_iter=500)
-output_name = 'sampled_sound.wav'
-librosa.output.write_wav('data/SOUND/sampled_sound.wav',reconst_sound,DATASET.Fs)
+obj = betaVAE
+MODEL_FILEPATH = 'data/models/MAXPOOL_beta4_H-DIM900_kernel250_ZDIM_10_STRIDE_1.model'
+file_obj = open(MODEL_FILEPATH, 'w')
+pickle.dump(obj, file_obj)
+print 'File is ' + MODEL_FILEPATH
