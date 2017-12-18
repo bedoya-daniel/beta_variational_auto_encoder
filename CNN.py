@@ -42,7 +42,7 @@ FS = 16000
 
 #%% Importing DATASET
 # Creating dataset
-DATASET_FILEPATH = 'data/datasets/DATASET_test.obj'
+DATASET_FILEPATH = 'data/datasets/DATASET_simple.obj'
 
 # If there is no archive of the dataset, it needs to be rendered
 if not pa.isfile(DATASET_FILEPATH):
@@ -138,7 +138,7 @@ for epoch in range(NB_EPOCH):
         # Loss
         reconst_loss = -0.5*SOUND_LENGTH*torch.sum(2*np.pi*log_var)
         reconst_loss -= torch.sum(torch.sum((images-out).pow(2))/((2*log_var.exp())))
-        reconst_loss /= (MNBATCH_SIZE*SOUND_LENGTH)
+        reconst_loss /= (BATCH_SIZE*SOUND_LENGTH)
         
         kl_divergence = torch.sum(0.5 * (mu**2
                                          + torch.exp(log_var)

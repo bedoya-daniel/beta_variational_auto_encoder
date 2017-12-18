@@ -6,6 +6,7 @@ VAE with a 2D convnet
 # Librairies
 import torch
 import torch.nn as nn
+import torch.functional as F
 from torch.autograd import Variable
 from framework.utils import to_var
 import logging
@@ -56,6 +57,7 @@ class CNN(nn.Module):
             nn.ReLU(),
             nn.MaxPool2d(2))
         
+        
         self.layer2_forward = nn.Sequential(
             nn.Conv2d(16, 32, kernel_size=self.kernel_size, padding=2),
             nn.BatchNorm2d(32),
@@ -64,16 +66,21 @@ class CNN(nn.Module):
 
         # Deconvolutional layers 1 & 2
         self.layer1_backward = nn.Sequential(
-                nn.MaxUnpool2d(kernel_size=5),
                 nn.BatchNorm2d(32),
                 nn.ConvTranspose2d(32, 16, kernel_size=self.kernel_size, padding=2),
                 nn.ReLU())
         
         self.layer2_backward = nn.Sequential(
-                nn.MaxUnpool2d(kernel_size=5),
                 nn.ReLU(),
                 nn.BatchNorm2d(16),
-                nn.ConvTranspose2d(16, 1, kernel_size=self.kernel_size, padding=2))
+                nn.ConvTranspose2d(16, 8, kernel_size=2,
+                                    stride=2,))
+                                # padding=2))
+        
+        self.layer3_backward = nn.Sequential(
+                nn.ReLU(),
+                nn.BatchNorm2d(8),
+                nn.ConvTranspose2d(8, 1, kernel_size=2,stride=2))#, padding=2))
 
         # Initializing weights
         self.encoder.apply(self.init_weight)
@@ -119,13 +126,17 @@ class CNN(nn.Module):
         
         """
         # Convolution 
-        out = self.layer1_forward(data)
-        out = self.layer2_forward(out)
-        #return out
-        out = out.view(out.size(0), -1)
+        outconv_1 = self.layer1_forward(data)
+        outconv_2 = self.layer2_forward(outconv_1)
+        
+        # out, index1 = self.convLayer(data, 1, 16)
+        # out, index2 = self.convLayer(data, 16, 32)
+        
+        # return out
+        outconv_2 = outconv_2.view(outconv_2.size(0), -1)
         
         # Encoder
-        encoded_vec = self.encoder(out)
+        encoded_vec = self.encoder(outconv_2)
         mu, log_var = torch.chunk(encoded_vec, 2, dim=1)  # mean and log variance.
         
         
@@ -134,18 +145,19 @@ class CNN(nn.Module):
         reparam = reparam.unsqueeze(1)
 
         # Decoder
-        output = self.decoder(reparam)
-        output = output.unsqueeze(1)
-        output = output.view(output.size(0),
+        decoded = self.decoder(reparam)
+        decoded_unsq = decoded.unsqueeze(1)
+        decoded_unsq = decoded_unsq.view(decoded_unsq.size(0),
                              32, 
                              self.height/(self.kernel_size-1), 
                              self.width/(self.kernel_size-1))
         
         # Return output
-        output_back1 = self.layer1_backward(output)
+        output_back1 = self.layer1_backward(decoded_unsq)
         output_back2 = self.layer2_backward(output_back1)
+        output_back3 = self.layer3_backward(output_back2)
         
-        return output_back2, mu, log_var
+        return output_back3, mu, log_var
 
     def sample(self, latent_vec):
         """ Decodes the given latent vector.
@@ -158,14 +170,36 @@ class CNN(nn.Module):
         """
         return self.decoder(latent_vec)
     
-    def conv1(self, input):
-        return -1
-    
-    def conv2(self, input):
-        return -1
-    
-    def unconv1(self, input):
-        return -1
-    
-    def unconv(self, input):
-        return -1
+#    def convLayer(self, input, in_Ch, out_ch):
+#        """ convolute the input from in_ch to out_ch
+#        
+#        Arguments:
+#            - input: input data to convolute
+#            - in_ch: number of input channels
+#            - out_ch: number of output channels
+#            
+#        Returns:
+#            - output: output data
+#        """
+#        
+#        conved = F.Conv2d(input, in_Ch, out_ch, kernel_size=self.kernel_size, padding=2)
+#        normed = F.BatchNorm2d(conved, out_ch)
+#        relued = F.ReLU(normed)
+#        output, index = F.MaxPool2d(2)
+#        
+#        return output,index
+#    
+#    def unconvLayer(self, input, index, in_ch, out_ch):
+#        """ unconvolute the input data
+#        
+#        Arguments:
+#            """
+#
+#        unMaxed = F.MaxUnpool2d(input, index, kernel_size=5)
+#        normed = F.BatchNorm2d(unMaxed, 32)
+#        F.ConvTranspose2d(normed, 32, 16, kernel_size=self.kernel_size, padding=2)
+#        F.ReLU()
+
+                
+        
+
