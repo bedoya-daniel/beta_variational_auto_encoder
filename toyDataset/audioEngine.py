@@ -59,8 +59,8 @@ class audioEngine:
             x = x + amp[k]*np.sin(2*np.pi*freq[k]*t)
             
         # time decay
-        decay = np.exp(-time_decay*t)
-        x = x*decay
+        decay_signal = np.exp(-time_decay*t)
+        x = x*decay_signal
                 
         
         ### FORMATTING
