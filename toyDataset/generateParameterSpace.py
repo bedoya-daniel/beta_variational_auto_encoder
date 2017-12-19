@@ -16,10 +16,10 @@ class parameterSpace:
     def __init__(self):
         # Initialisation
         # paramters:          start, inc, stop
-        self.params = {'f0' : [50, 20, 150],
-                       'PS' : [-0.1, -0.1, -0.2],
+        self.params = {'f0' : [100, 100, 1000],
+                       'PS' : [-0.1, -0.1, -0.9],
                        'PH' : [0, 1 ,1],
-                       'inh': [0, 0.1, 1],
+                       'inh': [0, 0.03, 0.5],
                        'SnR' : [1, 1,1]}
 
         self.parameter_space = dict.fromkeys(self.params)
