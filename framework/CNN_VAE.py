@@ -14,7 +14,7 @@ import logging
 class CNN(nn.Module):
     """ Variational Audo-Encoder (VAE) class, with a 1D convolutional net """
 
-    def __init__(self, height=784, width=100, out_conv_ch=400, kernel_size=5, h_dim=400, z_dim=5):
+    def __init__(self, height=784, width=100, kernel_size=5, h_dim=400, z_dim=5):
         """ Creates a VAE net object. 
         
         Arguments:
@@ -31,8 +31,6 @@ class CNN(nn.Module):
         self.width = width
         self.kernel_size = kernel_size
         
-        self.indices1, self.indices2 = None, None
-
         # ENCODER
         self.encoder = nn.Sequential(
             nn.Linear(32*self.sound_length/((self.kernel_size-1)**2),1200),
@@ -40,7 +38,7 @@ class CNN(nn.Module):
             nn.Linear(1200, h_dim),
             nn.ReLU(),
             nn.Linear(h_dim, z_dim*2),
-            nn.ReLU6())  # 2 for mean and variance.
+            nn.ReLU())  # 2 for mean and variance.
 
         # DECODER
         self.decoder = nn.Sequential(
@@ -66,7 +64,6 @@ class CNN(nn.Module):
 
         # Deconvolutional layers 1 & 2
         self.layer1_backward = nn.Sequential(
-                nn.BatchNorm2d(32),
                 nn.ConvTranspose2d(32, 16, kernel_size=self.kernel_size, padding=2),
                 nn.ReLU())
         
@@ -85,6 +82,18 @@ class CNN(nn.Module):
         # Initializing weights
         self.encoder.apply(self.init_weight)
         self.decoder.apply(self.init_weight)
+        
+        # Weight normalization
+#        self.w_enc = []
+#        for module in self.encoder:
+#            if type(module) is nn.Linear:
+#                self.w_enc.append(nn.utils.weight_norm(module))
+#                
+#        self.w_dec = []
+#        for module in self.decoder:
+#            if type(module) is nn.Linear:
+#                self.w_dec.append(nn.utils.weight_norm(module))
+
 
     def init_weight(self, module):
         """ This function initialize the weight of a linear layer
@@ -128,10 +137,7 @@ class CNN(nn.Module):
         # Convolution 
         outconv_1 = self.layer1_forward(data)
         outconv_2 = self.layer2_forward(outconv_1)
-        
-        # out, index1 = self.convLayer(data, 1, 16)
-        # out, index2 = self.convLayer(data, 16, 32)
-        
+
         # return out
         outconv_2 = outconv_2.view(outconv_2.size(0), -1)
         
@@ -168,38 +174,17 @@ class CNN(nn.Module):
         Returns:
             - output: decoded vector
         """
-        return self.decoder(latent_vec)
-    
-#    def convLayer(self, input, in_Ch, out_ch):
-#        """ convolute the input from in_ch to out_ch
-#        
-#        Arguments:
-#            - input: input data to convolute
-#            - in_ch: number of input channels
-#            - out_ch: number of output channels
-#            
-#        Returns:
-#            - output: output data
-#        """
-#        
-#        conved = F.Conv2d(input, in_Ch, out_ch, kernel_size=self.kernel_size, padding=2)
-#        normed = F.BatchNorm2d(conved, out_ch)
-#        relued = F.ReLU(normed)
-#        output, index = F.MaxPool2d(2)
-#        
-#        return output,index
-#    
-#    def unconvLayer(self, input, index, in_ch, out_ch):
-#        """ unconvolute the input data
-#        
-#        Arguments:
-#            """
-#
-#        unMaxed = F.MaxUnpool2d(input, index, kernel_size=5)
-#        normed = F.BatchNorm2d(unMaxed, 32)
-#        F.ConvTranspose2d(normed, 32, 16, kernel_size=self.kernel_size, padding=2)
-#        F.ReLU()
-
-                
+        decoded = self.decoder(latent_vec)
+        decoded_unsq = decoded.unsqueeze(1)
+        decoded_unsq = decoded_unsq.view(decoded_unsq.size(0),
+                             32, 
+                             self.height/(self.kernel_size-1), 
+                             self.width/(self.kernel_size-1))
         
+        # Return output
+        output_back1 = self.layer1_backward(decoded_unsq)
+        output_back2 = self.layer2_backward(output_back1)
+        output_back3 = self.layer3_backward(output_back2)
+        return output_back3
+
 

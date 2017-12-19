@@ -33,16 +33,17 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %
 N_FFT = 100
 BATCH_SIZE = 100
 #LEN_EXAMPLES = 38400
-LEN_EXAMPLES = 8000
+LEN_EXAMPLES = 25000
+
 # Net parameters
-Z_DIM, H_DIM, CONV1D_OUT = 20, 750, 1
+Z_DIM, H_DIM, CONV1D_OUT = 100, 500, 1
 KERNEL_SIZE = 5
 
 FS = 16000
 
 #%% Importing DATASET
 # Creating dataset
-DATASET_FILEPATH = 'data/datasets/DATASET_simple.obj'
+DATASET_FILEPATH = 'data/datasets/DATASET_test.obj'
 
 # If there is no archive of the dataset, it needs to be rendered
 if not pa.isfile(DATASET_FILEPATH):
@@ -61,6 +62,7 @@ else:
     DATASET = pickle.load(open(DATASET_FILEPATH,'rb'))
 
 IMG_LENGTH = np.shape(DATASET.__getitem__(9)[0])[1]
+
 for i in xrange(25, 75):
     if (IMG_LENGTH % i) == 0:
         BATCH_SIZE = i
@@ -89,18 +91,18 @@ FIXED_X = to_var(FIXED_X)
 torchvision.utils.save_image(FIXED_X.data.cpu(), './data/CNN/real_images.png')
 
 #%% CREATING THE Beta-VAE
+reload(CNN_VAE)
 betaVAE = CNN_VAE.CNN(height=HEIGHT,
                       width=WIDTH,
                       h_dim=H_DIM, 
                       z_dim=Z_DIM,
-                      out_conv_ch=CONV1D_OUT,
-                      kernel_size=KERNEL_SIZE)
+                      kernel_size=5)
 
 
 # BETA: Regularisation factor
 # 0: Maximum Likelihood
 # 1: Bayes solution
-BETA = 2
+BETA = 0
 
 
 # GPU computing if available
@@ -109,26 +111,27 @@ if torch.cuda.is_available():
     print('GPU acceleration enabled')
 
 # OPTIMIZER
-OPTIMIZER = torch.optim.Adagrad(betaVAE.parameters(), lr=0.001)
+OPTIMIZER = torch.optim.Adam(betaVAE.parameters(), lr=0.005)
 
 ITER_PER_EPOCH = len(DATASET)/BATCH_SIZE
-NB_EPOCH = 100;
+NB_EPOCH = 500;
 
 
-#%%
+
 """ TRAINING """
 for epoch in range(NB_EPOCH):    
     # Epoch
     print(' ')
     print('\t \t  /=======================================\\')
-    print('\t \t  | - | - | - | EPOCH [%d/%d] | - | - | - | '%(epoch+1, NB_EPOCH))
+    print('\t \t | - | - | - | EPOCH [%d/%d] | - | - | - | '%(epoch+1, NB_EPOCH))
     print('\t \t  \\=======================================/')
     print(' ')
-    for i,(images,params) in enumerate(DATA_LOADER):
+    for i,(images,_) in enumerate(DATA_LOADER):
 
         # Formatting
+        #images = images/max(images);
         images = images.type(torch.FloatTensor)
-        images = images.view(BATCH_SIZE, N_FFT, -1).unsqueeze(1)
+        images = images.view(images.size(0), N_FFT, -1).unsqueeze(1)
         images = to_var(torch.Tensor(images))
         
         # Input in the net
@@ -136,16 +139,16 @@ for epoch in range(NB_EPOCH):
         images = images.squeeze(1)
 
         # Loss
-        reconst_loss = -0.5*SOUND_LENGTH*torch.sum(2*np.pi*log_var)
+        reconst_loss = -0.5*WIDTH*HEIGHT*torch.sum(2*np.pi*log_var)
         reconst_loss -= torch.sum(torch.sum((images-out).pow(2))/((2*log_var.exp())))
-        reconst_loss /= (BATCH_SIZE*SOUND_LENGTH)
+        #reconst_loss /= (BATCH_SIZE*SOUND_LENGTH)
         
         kl_divergence = torch.sum(0.5 * (mu**2
                                          + torch.exp(log_var)
                                          - log_var -1))
 
         # Backprop + Optimize
-        total_loss = - reconst_loss + BETA*kl_divergence
+        total_loss = -reconst_loss + BETA*kl_divergence
         OPTIMIZER.zero_grad()
         total_loss.backward()
         OPTIMIZER.step()
@@ -162,23 +165,24 @@ for epoch in range(NB_EPOCH):
 
     # Save the reconstructed images
     reconst_images, _, _ = betaVAE(FIXED_X)
-    reconst_images = reconst_images.view(BATCH_SIZE, 1, N_FFT, -1)
+    reconst_images = reconst_images.view(reconst_images.size(0), 1, N_FFT, -1)
     torchvision.utils.save_image(reconst_images.data.cpu(),
-                                 './data/CQT/reconst_images_%d.png' %(epoch+1))
+                                 './data/CNN/reconst_images_%d.png' %(epoch+1))
 
 #%% SAMPLING FROM LATENT SPACE
-FIXED_Z = zdim_analysis(BATCH_SIZE, Z_DIM, 3, -100, 100)
 
-FIXED_Z = to_var(torch.Tensor(FIXED_Z.contiguous())).unsqueeze(1)
+FIXED_Z = zdim_analysis(BATCH_SIZE, Z_DIM, 50, -10, 10)
+
+FIXED_Z = torch.Tensor(FIXED_Z.contiguous()).unsqueeze(1)
 
 # Sampling from model, reconstructing from spectrogram
 sampled_image = betaVAE.sample(FIXED_Z)
 reconst_images = sampled_image.view(BATCH_SIZE, 1, N_FFT, -1)
-torchvision.utils.save_image(reconst_images.data.cpu(), './data/CQT/sampled_images.png')
+torchvision.utils.save_image(reconst_images.data.cpu(), './data/CNN/sampled_images.png')
 
 #%%
 obj = betaVAE
-MODEL_FILEPATH = 'data/models/CNN_beta4_H-DIM900_kernel250_ZDIM_10_STRIDE_1.model'
+MODEL_FILEPATH = 'data/models/CNN-2D_beta4_H-DIM750_kernel5_ZDIM_20_STRIDE_1_full_dataset_small.model'
 file_obj = open(MODEL_FILEPATH, 'w')
 pickle.dump(obj, file_obj)
 print 'File is ' + MODEL_FILEPATH
