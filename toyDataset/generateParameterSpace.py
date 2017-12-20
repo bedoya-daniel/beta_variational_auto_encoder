@@ -20,7 +20,7 @@ class parameterSpace:
                        'PS' : [-0.1, -0.1, -0.9],
                        'PH' : [0, 1 ,1],
                        'inh': [0, 0.1, 1],
-                       'decay' : [0, 0.1, 10]}
+                       'decay' : [0, 1, 10]}
 
         self.parameter_space = dict.fromkeys(self.params)
         self.N_samples = None # number of samples to generate

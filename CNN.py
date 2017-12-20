@@ -33,17 +33,17 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %
 N_FFT = 100
 BATCH_SIZE = 100
 #LEN_EXAMPLES = 38400
-LEN_EXAMPLES = 25000
+LEN_EXAMPLES = 8000
 
 # Net parameters
-Z_DIM, H_DIM, CONV1D_OUT = 100, 500, 1
+Z_DIM, H_DIM = 15, 500
 KERNEL_SIZE = 5
 
 FS = 16000
 
 #%% Importing DATASET
 # Creating dataset
-DATASET_FILEPATH = 'data/datasets/DATASET_test.obj'
+DATASET_FILEPATH = 'data/datasets/DATASET_test_new.obj'
 
 # If there is no archive of the dataset, it needs to be rendered
 if not pa.isfile(DATASET_FILEPATH):
@@ -102,7 +102,7 @@ betaVAE = CNN_VAE.CNN(height=HEIGHT,
 # BETA: Regularisation factor
 # 0: Maximum Likelihood
 # 1: Bayes solution
-BETA = 0
+BETA = 4
 
 
 # GPU computing if available
@@ -111,7 +111,7 @@ if torch.cuda.is_available():
     print('GPU acceleration enabled')
 
 # OPTIMIZER
-OPTIMIZER = torch.optim.Adam(betaVAE.parameters(), lr=0.005)
+OPTIMIZER = torch.optim.RMSprop(betaVAE.parameters())
 
 ITER_PER_EPOCH = len(DATASET)/BATCH_SIZE
 NB_EPOCH = 500;
@@ -139,9 +139,8 @@ for epoch in range(NB_EPOCH):
         images = images.squeeze(1)
 
         # Loss
-        reconst_loss = -0.5*WIDTH*HEIGHT*torch.sum(2*np.pi*log_var)
+        reconst_loss = -0.5*torch.sum(2*np.pi*log_var)
         reconst_loss -= torch.sum(torch.sum((images-out).pow(2))/((2*log_var.exp())))
-        #reconst_loss /= (BATCH_SIZE*SOUND_LENGTH)
         
         kl_divergence = torch.sum(0.5 * (mu**2
                                          + torch.exp(log_var)
