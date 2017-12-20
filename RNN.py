@@ -36,7 +36,7 @@ FS = 8000
 # %% Importing DATASET
 
 # Creating dataset
-DATASET_FILEPATH = 'data/datasets/DATASET_full_small.obj'
+DATASET_FILEPATH = 'data/datasets/DATASET.obj'
 
 # If there is no archive of the dataset, it needs to be rendered
 if not pa.isfile(DATASET_FILEPATH):
