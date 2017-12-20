@@ -27,7 +27,7 @@ The `generateParameterSpace` module gets a default dictionnary that specifies th
 Here is a list of CQT randomly taken from the dataset:
 
 
-![A Few CQT (Constant Q Transform)](data/CQT/real_image.png)
+![CQT](data/CNN/real_images.png)
 
 ## Models
 We implemented a simple beta-VAE (beta variational auto encoder), a convolutionnal beta-VAE and a RNN (recurrent neural network).
