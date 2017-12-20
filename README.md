@@ -29,14 +29,20 @@ Here is a list of CQT randomly taken from the dataset:
 
 ![CQT](data/CNN/real_images.png)
 
+Everything else is explained in the [toyDataset README](toyDataset/README.md).
+
 ## Models
-We implemented a simple beta-VAE (beta variational auto encoder), a convolutionnal beta-VAE and a RNN (recurrent neural network).
+Models are contained in the `framework` folder. Further details in the [Framework README](framework/README.md).
 
 ### MNIST: VAE behaviour
 When beta is set to 1, we obtain a simple VAE. Here you can see a visualization of the latent space.
+![Latent space, beta=1](data/MNIST/GIFS/sampled_beta1_clean.gif)
 
-### MNIST: beta-VAE behaviour for differents
+### MNIST: beta-VAE behaviour for differents Beta value
 The effect of beta is to force the disentagnlement of visual factors. Here you can see that the net use one latent dimension for number, and not for lower level features (line, curve, angle for instance).
+
+![Latent space, beta = 4](data/MNIST/GIFS/sampled_beta4_clean.gif)
+![Latent space, beta = 8](data/MNIST/GIFS/sampled_beta8_clean.gif)
 
 ### Install requirements
 `pip install -r requirements.txt`
