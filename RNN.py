@@ -1,6 +1,6 @@
 # -*-encoding:UTF-8-*-
 """
-Beta Variational Auto-Encoder
+Beta Variational Auto-Encoder, with an attention RNN Model
 """
 
 # %% Librairies
@@ -65,27 +65,32 @@ DATA_LOADER = torch.utils.data.DataLoader(dataset=DATASET,
                                           batch_size=BATCH_SIZE,
                                           shuffle=True)
 
-# %% Saving original image
+#%% Saving original image
 FIXED_INDEX = randint(BATCH_SIZE)
 
 # Saving an item from the dataset to debug
 DATA_ITER = iter(DATA_LOADER)
 FIXED_X, _ = next(DATA_ITER)
 FIXED_X = torch.Tensor(FIXED_X.float()).view(FIXED_X.size(0), -1).squeeze()
+
+# GATHERING INFOS
 HEIGHT, WIDTH = FIXED_X.size()
 NB_FEN = WIDTH/N_FFT
-# %% SAVING fixed x as an image
+
+#%% SAVING fixed x as an image
 FIXED_X = to_var(FIXED_X)
 reconst_images = FIXED_X.view(BATCH_SIZE, 1, N_FFT, -1)
 torchvision.utils.save_image(reconst_images.data.cpu(),
-                             './data/spectro/original_images.png')
+                             './data/RNN/original_images.png')
 
-# formatting for rnn
+# formatting for RNN net
 FIXED_X = torch.chunk(FIXED_X, N_FFT, 1)
 FIXED_X = torch.cat(FIXED_X, 0)
 FIXED_X = FIXED_X.view(N_FFT, BATCH_SIZE, -1)
 FIXED_X = FIXED_X.transpose(0, 2)
-# %% CREATING THE Beta-VAE
+
+
+# %% CREATING THE NET
 betaVAE = modAttentiondef.AttentionRnn(sample_size=N_FFT, h_dim=H_DIM,
                                        z_dim=Z_DIM)
 
@@ -102,6 +107,7 @@ if torch.cuda.is_available():
 # OPTIMIZER
 OPTIMIZER = torch.optim.Adam(betaVAE.parameters(), lr=0.001)
 
+# CONST FOR TRAINING
 ITER_PER_EPOCH = len(DATASET)/BATCH_SIZE
 NB_EPOCH = 50
 SOUND_LENGTH = np.shape(DATASET.__getitem__(9)[0])[0]
@@ -129,9 +135,8 @@ for epoch in range(NB_EPOCH):
         # Compute reconstruction loss and KL-divergence
         reconst_loss = -0.5*N_FFT*batch_size*torch.sum(2*np.pi*log_var)
         reconst_loss -= torch.sum(torch.sum((images-out).pow(2))/((2*log_var.exp())))
-#        #reconst_loss /= (BATCH_SIZE*SOUND_LENGTH)
-#        reconst_loss = F.binary_cross_entropy(out, images, size_average=True)
-
+        
+        # KL-DIVERGENCE
         kl_divergence = torch.sum(0.5 * (mu**2
                                          + torch.exp(log_var)
                                          - log_var - 1))
@@ -159,7 +164,7 @@ for epoch in range(NB_EPOCH):
     reconst_images = torch.cat(reconst_images, 2).squeeze()
     reconst_images = reconst_images.view(BATCH_SIZE, 1, N_FFT, -1)
     torchvision.utils.save_image(reconst_images.data.cpu(),
-                                 './data/spectro/reconst_images_%d.png' %(epoch+1))
+                                 './data/RNN/reconst_images_%d.png' %(epoch+1))
 
 # %% SAMPLING FROM LATENT SPACE
 FIXED_Z = zdim_analysis(BATCH_SIZE, Z_DIM, 2, 0, 10)
@@ -174,12 +179,4 @@ sampled_image = torch.chunk(sampled_image, N_FFT, 0)
 sampled_image = torch.cat(sampled_image, 2).squeeze()
 sampled_image = sampled_image.view(BATCH_SIZE, 1, N_FFT, -1)
 torchvision.utils.save_image(sampled_image.data.cpu(),
-                             './data/spectro/sampled_images.png')
-
-# %%
-#sampled_image_numpy = sampled_image.data.numpy()
-#sampled_image_numpy = sampled_image_numpy[1, :].reshape(N_FFT/2+1, -1)
-#
-#reconst_sound = DATASET.audio_engine.griffinlim(sampled_image_numpy, N_iter=500)
-#output_name = 'sampled_sound.wav'
-#librosa.output.write_wav('data/SOUND/sampled_sound.wav', reconst_sound,DATASET.Fs)
+                             './data/RNN/sampled_images.png')
