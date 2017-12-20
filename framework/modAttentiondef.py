@@ -152,4 +152,5 @@ class AttentionRnn(nn.Module):
         Returns:
             - output: decoded vector
         """
-        return self.decoder(latent_vec)
+        sampled, _ = self.decoder(latent_vec)
+        return sampled
