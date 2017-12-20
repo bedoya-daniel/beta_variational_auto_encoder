@@ -34,8 +34,10 @@ class CNN(nn.Module):
         # ENCODER
         self.encoder = nn.Sequential(
             nn.Linear(32*self.sound_length/((self.kernel_size-1)**2),1200),
+            nn.Dropout(),
             nn.ReLU(),
             nn.Linear(1200, h_dim),
+            nn.Dropout(),
             nn.ReLU(),
             nn.Linear(h_dim, z_dim*2),
             nn.ReLU())  # 2 for mean and variance.
@@ -51,6 +53,7 @@ class CNN(nn.Module):
         # Convolutional layer 1 & 2
         self.layer1_forward = nn.Sequential(
             nn.Conv2d(1, 16, kernel_size=self.kernel_size, padding=2),
+            nn.Dropout2d(),
             nn.BatchNorm2d(16),
             nn.ReLU(),
             nn.MaxPool2d(2))
@@ -58,6 +61,7 @@ class CNN(nn.Module):
         
         self.layer2_forward = nn.Sequential(
             nn.Conv2d(16, 32, kernel_size=self.kernel_size, padding=2),
+            nn.Dropout2d(),
             nn.BatchNorm2d(32),
             nn.ReLU(),
             nn.MaxPool2d(2))
@@ -84,15 +88,15 @@ class CNN(nn.Module):
         self.decoder.apply(self.init_weight)
         
         # Weight normalization
-#        self.w_enc = []
-#        for module in self.encoder:
-#            if type(module) is nn.Linear:
-#                self.w_enc.append(nn.utils.weight_norm(module))
-#                
-#        self.w_dec = []
-#        for module in self.decoder:
-#            if type(module) is nn.Linear:
-#                self.w_dec.append(nn.utils.weight_norm(module))
+        self.w_enc = []
+        for module in self.encoder:
+            if type(module) is nn.Linear:
+                self.w_enc.append(nn.utils.weight_norm(module))
+
+        self.w_dec = []
+        for module in self.decoder:
+            if type(module) is nn.Linear:
+                self.w_dec.append(nn.utils.weight_norm(module))
 
 
     def init_weight(self, module):

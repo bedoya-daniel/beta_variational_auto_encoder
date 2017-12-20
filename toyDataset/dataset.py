@@ -136,8 +136,8 @@ class toyDataset(Dataset):
             data = data/np.max(data)
             data = np.array(data, dtype=np.dtype('float'))
         else:
-            raise ValueError('Expected spectro or cqt, but got {}. Select a\
-            correct representation name'%(self.data))
+            raise ValueError('Expected spectro or cqt, but got ' + self.data + '. Select a\
+            correct representation name')
         
         return data,param
 
